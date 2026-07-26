@@ -68,18 +68,18 @@
     .section-body { max-width: 700px; color: var(--text-subtle); line-height: 1.65; }
 
     /* -------- Kill Board (used as open, visible evidence, not hidden) -------- */
-    .kill-board { background: var(--ink2); color: var(--surface); border-radius: 1.25rem; padding: 2.2rem 2.4rem; margin-top: 4rem; }
-    .kill-board h3 { font-family: var(--font-display); font-size: 1.3rem; letter-spacing: -0.02em; color: var(--surface2); margin-bottom: 1.4rem; }
+    .kill-board { background: var(--surface2); color: var(--ink); border: 1px solid var(--surface3); border-radius: 1.25rem; padding: 2.2rem 2.4rem; margin-top: 4rem; }
+    .kill-board h3 { color: var(--ink); }
     .kill-board table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.78rem; }
-    .kill-board th { text-align: left; color: var(--text-muted); padding: 0.55rem 0.6rem; border-bottom: 1px solid #38352d; }
-    .kill-board td { padding: 0.6rem 0.55rem; border-bottom: 1px solid #262420; color: var(--surface2); }
-    .kill-board .ok { color: #d6c8a0; font-weight: 500; }
-    .kill-board .kill { color: #b06a48; opacity: 0.85; }
+    .kill-board th { text-align: left; color: var(--text-muted); padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--surface3); background: var(--surface); }
+    .kill-board td { padding: 0.6rem 0.55rem; border-bottom: 1px solid var(--surface3); color: var(--ink); }
+    .kill-board .ok { color: #2a6b18; font-weight: 500; }
+    .kill-board .kill { color: var(--accent-dim); opacity: 0.9; }
 
     /* -------- Evidence Bundle (technical clarity) -------- */
-    .evidence-spec { background: var(--ink); color: var(--surface2); border-radius: 1rem; padding: 2rem 2.2rem; margin-top: 4rem; overflow-x: auto; }
-    .evidence-spec code { font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.65; color: #ddd8c3; }
-    .evidence-spec .key { color: #e09a6e; }
+    .evidence-spec { background: var(--surface2); color: var(--ink); border: 1px solid var(--surface3); border-radius: 1rem; padding: 2rem 2.2rem; margin-top: 4rem; overflow-x: auto; }
+    .evidence-spec code { font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.65; color: var(--ink); }
+    .evidence-spec .key { color: var(--accent); }
 
     /* -------- Feature grid (ONE strong primitive repeated — NOT 7 different card styles) -------- */
     .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); gap: 1.2rem; margin-top: 2rem; }
