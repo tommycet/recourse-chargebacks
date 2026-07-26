@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "publishedAt": "2026-07-26T00:00:00Z",
+  "publisher": "recourse.eth",
+  "rulebookName": "Recourse Tier-1 Arbiter Rulebook v1.0",
+  "jurisdictionNote": "Machine-speed representment first; human appeal (Tier-2) for disputes above $500.",
+  "rules": [
+    "Tier-0 objective verification (machine-speed, instant settlement): if txHash exists on-chain, contentDigest matches committed digest, and automated test suite passes → settlement = release to seller.",
+    "ContentDigest mismatch rule: if delivered contentDigest ≠ committed contentDigest → buyer wins (refund). Fee paid by seller. This is the x402 #1645 receipts-hole fix.",
+    "Test suite failure: if committed test suite fails against delivered artifact → buyer wins (refund). Fee paid by seller. Test suite is the delivery gate.",
+    "Buyer non-response: if buyer does not submit evidence within the dispute window → seller wins. Fee paid by buyer.",
+    "Partial delivery: if test suite passes a subset of committed tests with no other failure → tie. Escrow split 50/50. Fee paid from escrow balance.",
+    "Loser-pays fee: the losing party pays a 0.25% dispute fee (under 1% total, undercutting card-network ~2.9%). This aligns incentives against frivolous disputes.",
+    "Reputation signal: resolved dispute outcomes are the only sybil-resistant dataset for agent reputation — fraud requires moving real funds. This feeds the reputation flywheel."
+  ],
+  "tierMapping": {
+    "Tier-0": "objective auto-verify (tx hash, contentDigest match, test suite pass)",
+    "Tier-1": "AI arbiter (this rulebook) — machine-speed representment",
+    "Tier-2": "human appeal — for disputes > $500 or contested Tier-1 outcomes"
+  },
+  "references": [
+    "a16z agent-payments deep dive (2026): agent scope, KYA, liability — liability unsolved.",
+    "x402 issue #1645 (Coinbase): /settle executes blockchain transfer with zero delivery verification — no chargeback mechanism.",
+    "DeepMind 'Intelligent AI Delegation' (Tomášev et al., 2026): delegation + arbitration blueprint.",
+    "Visa/Mastercard 'trusted agent' programs: card networks defend the dispute-system moat crypto lacks."
+  ]
+}

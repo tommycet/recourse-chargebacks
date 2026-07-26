@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recourse — Chargebacks for the Machine Economy</title>
+  <meta name="description" content="The buyer-protection and dispute-resolution layer for agent payments — escrowed settlement, cryptographic evidence bundles, and an AI arbiter at machine speed. Building for Agents Onchain (KeeperHub).">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0c0b08;
+      --ink2: #151410;
+      --ink3: #1d1b16;
+      --surface: #f4f1e8;
+      --surface2: #ece9d4;
+      --surface3: #ddd8c3;
+      --accent: #c84e14;           /* burnt sienna — different accent */
+      --accent-dim: #8a3d16;
+      --text-main: #0c0b08;
+      --text-subtle: #635e52;
+      --text-muted: #9e9585;
+      --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+      --ease-out: cubic-bezier(.22,.61,.36,1);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--surface);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 15.5px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    ::selection { background: rgba(200,78,20,0.12); color: var(--ink); }
+    /* -------- Navigation -------- */
+    nav { position: sticky; top: 0; z-index: 50; background: rgba(244,241,232,0.78);  border-bottom: 1px solid var(--surface3); }
+    .nav-inner { max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-family: var(--font-display); font-size: 1.35rem; color: var(--ink); letter-spacing: -0.02em; text-decoration: none; line-height: 1.1; }
+    .logo em { font-style: italic; color: var(--accent); }
+    .nav-links a { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-subtle); text-decoration: none; margin-left: 2rem; letter-spacing: 0.01em; transition: color .2s; }
+    .nav-links a:hover { color: var(--text-main); }
+
+    /* -------- Hero (left-aligned editorial, NOT centered generic) -------- */
+    .hero { position: relative; max-width: 1200px; margin: 0 auto; padding: 9rem 2rem 7rem; }
+    .hero-label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.2rem; }
+    .hero h1 { font-family: var(--font-display); font-size: clamp(2.8rem, 6vw, 5.2rem); line-height: 0.92; letter-spacing: -0.035em; color: var(--ink); max-width: 14ch; }
+    .hero h1 em { font-style: italic; color: var(--accent); }
+    .hero p.lead { max-width: 640px; font-size: 1.05rem; color: var(--text-subtle); margin-top: 1.6rem; line-height: 1.55; }
+    .hero-cta { display: inline-flex; gap: 1.2rem; margin-top: 2.6rem; align-items: center; }
+    .btn-primary { display: inline-block; padding: 0.85rem 1.5rem; background: var(--ink); color: var(--surface); font-family: var(--font-mono); font-size: 0.82rem; letter-spacing: 0.06em; text-decoration: none; transition: transform .18s var(--ease-out), background .2s; border-radius: 0; }
+    .btn-primary:hover { background: var(--ink3); transform: translateY(-1px); }
+    .btn-secondary { display: inline-block; padding: 0.85rem 1.3rem; border: 1px solid var(--ink); color: var(--ink); font-family: var(--font-mono); font-size: 0.82rem; letter-spacing: 0.06em; text-decoration: none; transition: background .2s; border-radius: 0; }
+    .btn-secondary:hover { background: var(--ink); color: var(--surface); }
+    /* Thin decorative divider line — NOT a colored top-border card */
+    .divider { width: 4.5rem; height: 2px; background: var(--accent); margin: 3.5rem 0 0; }
+
+    /* -------- Sections -------- */
+    main > section { max-width: 1200px; margin: 0 auto; padding: 6rem 2rem; }
+    main > section + section { border-top: 1px solid var(--surface3); }
+    .section-label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; }
+    .section-title { font-family: var(--font-display); font-size: clamp(2rem, 4.2vw, 3.2rem); line-height: 1.05; letter-spacing: -0.03em; color: var(--ink); margin-bottom: 1.2rem; max-width: 18ch; }
+    .section-body { max-width: 700px; color: var(--text-subtle); line-height: 1.65; }
+
+    /* -------- Kill Board (used as open, visible evidence, not hidden) -------- */
+    .kill-board { background: var(--ink2); color: var(--surface); border-radius: 1.25rem; padding: 2.2rem 2.4rem; margin-top: 4rem; }
+    .kill-board h3 { font-family: var(--font-display); font-size: 1.3rem; letter-spacing: -0.02em; color: var(--surface2); margin-bottom: 1.4rem; }
+    .kill-board table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.78rem; }
+    .kill-board th { text-align: left; color: var(--text-muted); padding: 0.55rem 0.6rem; border-bottom: 1px solid #38352d; }
+    .kill-board td { padding: 0.6rem 0.55rem; border-bottom: 1px solid #262420; color: var(--surface2); }
+    .kill-board .ok { color: #d6c8a0; font-weight: 500; }
+    .kill-board .kill { color: #b06a48; opacity: 0.85; }
+
+    /* -------- Evidence Bundle (technical clarity) -------- */
+    .evidence-spec { background: var(--ink); color: var(--surface2); border-radius: 1rem; padding: 2rem 2.2rem; margin-top: 4rem; overflow-x: auto; }
+    .evidence-spec code { font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.65; color: #ddd8c3; }
+    .evidence-spec .key { color: #e09a6e; }
+
+    /* -------- Feature grid (ONE strong primitive repeated — NOT 7 different card styles) -------- */
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+    .feature-card { border-top: 2px solid var(--accent); padding-top: 1.2rem; }
+    .feature-card h4 { font-family: var(--font-display); font-size: 1.15rem; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 0.55rem; }
+    .feature-card p { font-size: 0.9rem; color: var(--text-subtle); line-height: 1.5; }
+
+    /* -------- Demo / Stats (intentionally minimal, no banner stat row) -------- */
+    .stats-stripe { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 2rem; margin-top: 1.5rem; }
+    .stat { font-family: var(--font-display); font-size: 1.8rem; letter-spacing: -0.03em; color: var(--ink); line-height: 1.1; }
+    .stat span { display: block; font-family: var(--font-body); font-size: 0.78rem; letter-spacing: 0.05em; color: var(--text-muted); margin-top: 0.35rem; text-transform: uppercase; }
+
+    /* -------- Footer -------- */
+    footer { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem 2.5rem; border-top: 1px solid var(--surface3); display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    footer .credit { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); }
+    footer .credit strong { color: var(--ink); font-weight: 500; }
+
+    /* -------- Reduced motion -------- */
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .nav-inner { padding: 0.9rem 1.2rem; }
+      .nav-links a { margin-left: 1rem; }
+      .hero { padding: 6rem 1.2rem 4rem; }
+      .hero h1 { font-size: 2.6rem; }
+      main > section { padding: 4rem 1.2rem; }
+      .kill-board { padding: 1.2rem 1.2rem; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav aria-label="primary">
+    <div class="nav-inner">
+      <a href="#" class="logo">Recourse <em>— chargebacks</em></a>
+      <div class="nav-links">
+        <a href="#problem">Problem</a>
+        <a href="#evidence">Evidence</a>
+        <a href="#demo">Demo</a>
+        <a href="#docs">Docs</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO: left-aligned, editorial, no centered generic sans, no badge pill above H1 -->
+  <header class="hero" id="top">
+    <p class="hero-label">Agents Onchain Hackathon — KeeperHub · Aug 2026</p>
+    <h1>Chargebacks for the <em>machine</em> economy.</h1>
+    <p class="lead">The buyer-protection and dispute-resolution layer for agent payments. Escrowed settlement, cryptographic evidence bundles, and an AI arbiter that resolves disputes at machine speed. <strong>Visa's moat was never the card network — it was the dispute system.</strong> The agent economy has payments. It has no dispute system.</p>
+    <div class="divider"></div>
+    <div class="hero-cta">
+      <a class="btn-primary" href="#demo">Run the onchain demo</a>
+      <a class="btn-secondary" href="#docs">Read the spec</a>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Problem -->
+    <section id="problem">
+      <p class="section-label">01 — The evidence triangle</p>
+      <h2 class="section-title">Three sources point at the same empty shelf.</h2>
+      <p class="section-body">x402 processed 165M+ transactions from ~69K agents — but Social Graph Ventures found <strong>86% of Solana's x402 activity was "gamed,"</strong> not organic commerce. Bloomberg: <em>"Stablecoin Firms Bet Big on AI Agent Payments That Barely Exist."</em> Coinbase's own repo (x402 issue #1645) admits it plainly: <code>/settle</code> executes blockchain transfer with zero delivery verification. A malicious server can pocket funds and return nothing — with no recourse for buyers. x402's docs frame "no chargebacks" as a feature. That's the contrarian insight: irreversibility is exactly why serious buyers won't route non-trivial value through these rails.</p>
+
+      <p class="section-body">a16z named it by name — <strong>"Liability: who bears the cost when an agent-initiated transaction is reversed?"</strong> — and it's the only one of their three named problems that still has no funded startup behind it. Meanwhile Kleros uses human jurors (wrong speed/cost for $0.02–$200 machine transactions), Clawback (ETHGlobal NY 2026) didn't win and didn't ship, and DeepMind's <em>Intelligent AI Delegation</em> (2026) published the academic blueprint. <strong>The research exists; the product does not.</strong></p>
+
+      <!-- Kill board: transparent evidence of competitive scan -->
+      <div class="kill-board">
+        <h3>The Kill Board — competitive scan (honest)</h3>
+        <table>
+          <thead>
+            <tr><th>Candidate</th><th>Verdict</th><th>What the scan found</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Agent wallet firewall</td><td><span class="kill">Killed</span></td><td>Turnkey, Crossmint, Coinbase CDP, Safe — crowded.</td></tr>
+            <tr><td>Billing for agent products</td><td><span class="kill">Killed</span></td><td>Nevermined, Skyfire, Payman ($9.5M), Stripe Agent Toolkit.</td></tr>
+            <tr><td>DeFi defensive security</td><td><span class="kill">Wounded</span></td><td>Hypernative ($65M) stops exploits; only retail layer open.</td></tr>
+            <tr><td>FICO for agents (KYA)</td><td><span class="kill">Wounded</span></td><td>AsterPay KYA, ScoutScore, Qova launched 2026.</td></tr>
+            <tr><td>AI AAC / voice</td><td><span class="kill">Wounded</span></td><td>LENO AI, TinyBridge, AssistiveWare PolyPredix + regulatory friction.</td></tr>
+            <tr><td>Smallholder carbon MRV</td><td><span class="kill">Wounded</span></td><td>Boomitra, Varaha, CarbonKhet (satellite + Polygon, 22K ha pilot).</td></tr>
+            <tr><td><strong>Dispute / buyer protection</strong></td><td><span class="ok">SURVIVED</span></td><td><strong>The one.</strong> Zero native agent products found.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Evidence Bundle -->
+    <section id="evidence">
+      <p class="section-label">02 — Evidence bundle as a standard</p>
+      <h2 class="section-title">Every transaction emits a signed, hash-committed record.</h2>
+      <p class="section-body">Not another escrow contract — those are hackathon-saturated. The unbuilt thing is the institution around the escrow, transplanted from 50 years of card-network dispute architecture into machine speed. A standard evidence bundle closes the x402 receipts hole (issue #1645 — "in-memory and lost on server restart") while keeping bundles small (<1KB, hash-committed, not raw payload) for verifiable replay.</p>
+      <div class="evidence-spec">
+        <code>{ "rulebookVersion": "v1.0",
+  "requestDigest": "sha3(keccak256('buy-summary-agent'))",
+  "responseDigest": "sha3(output-hash)",
+  "contentDigest": "sha3(delivered-content)",
+  "txHash": "0xdead...",
+  "timestamp": 1753574400,
+  "signer": "0xAA70...",
+  "hash()": "keccak256(canonicalJSON(this))",
+  "toJSON()": "serialisable file for audit / EU MiCA / VAT export"
+}</code>
+      </div>
+      <p style="font-size:0.78rem;color:var(--text-muted);font-family:var(--font-mono);margin-top:0.4rem;">Canonical JSON ordering (sorted keys, no whitespace) → deterministic hash → sybil-resistant reputation signal.</p>
+    </section>
+
+    <!-- Three-pronged architecture -->
+    <section id="design">
+      <p class="section-label">03 — Tiered arbiter, not a judge</p>
+      <h2 class="section-title">Tier 0: instant. Tier 1: machine-speed. Tier 2: human appeal.</h2>
+      <p class="section-body">Card networks' genius was liability rules, not perfect judgment. We replicate that: Tier-0 verifies tx hash + contentDigest match + automated test suite passes → instant settlement. Tier-1 applies the <a href="#docs" style="color:var(--accent);text-decoration:none;font-family:var(--font-mono);">published rulebook</a> (TEE-hosted, no hidden weights) to the evidence bundle — machine-speed representment. Tier-2 is a human appeal, only for disputes above $500. The loser pays a 0.25% fee — aligning incentives and funding the layer.</p>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <h4>Evidence bundles</h4>
+          <p>Signed, hash-committed records per transaction. Closes the x402 #1645 receipts hole (in-memory → persistent) and feeds an exportable audit trail for EU MiCA / VAT compliance.</p>
+        </article>
+        <article class="feature-card">
+          <h4>Tiered arbiter</h4>
+          <p>Tier-0: objective verification (tx hash, contentDigest, latency SLA) settles instantly. Tier-1: AI arbiter in a TEE applies the public rulebook. Tier-2: human appeal.</p>
+        </article>
+        <article class="feature-card">
+          <h4>Reputation flywheel</h4>
+          <p>Payment volume can be gamed (86% of x402 Solana activity was "gamed"). A resolved dispute with real USDC moved is sybil-resistant by construction — the dataset moat.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Demo -->
+    <section id="demo">
+      <p class="section-label">04 — The execution (Judging bar: real transaction)</p>
+      <h2 class="section-title">Agent buys a service. Delivery fails. Arbiter executes the refund <em>onchain</em> via KeeperHub.</h2>
+      <p class="section-body">This is the precise execution that satisfies the hackathon's judging bar: a working onchain transaction through KeeperHub's MCP / CLI / agentic-wallet layer (Base USDC, Turnkey sub-org, gas sponsorship, audit trail). The demo uses the <code>TaskEscrow</code> contract deployed on Base mainnet, with the <code>RecourseWrap</code> middleware intercepting an existing x402 endpoint and emitting signed evidence bundles. The arbiter agent executes <code>resolveDispute</code> via KeeperHub's <code>web3/write-contract</code> workflow — a real USDC refund transaction.</p>
+      <div class="stats-stripe">
+        <div class="stat">14 days <span>Auto-refund timeout (machine-speed)</span></div>
+        <div class="stat">0.25% <span>Loser-pays dispute fee (vs ~2.9% cards)</span></div>
+        <div class="stat">8453 <span>Base chain (USDC)</span></div>
+        <div class="stat">1 PR <span>To coinbase/x402 (issue #1645 — open invitation)</span></div>
+      </div>
+      <p style="font-size:0.82rem;color:var(--text-subtle);margin-top:1.5rem;font-family:var(--font-body);">First 100 users: Coinbase Bazaar x402 API sellers (10,000+ services with zero buyer protection) + agent orchestrators hiring subagents. Compliance tier: exportable receipts/evidence bundles for EU MiCA/VAT.</p>
+    </section>
+
+    <!-- Risks (honest — not aspirational fluff) -->
+    <section id="docs" style="border-top:none;">
+      <p class="section-label">05 — Honest risks</p>
+      <h2 class="section-title">Three risks — with real mitigations.</h2>
+      <p class="section-body" style="margin-bottom:0.8rem;"><strong>Risk 1 — x402 Foundation standardizes disputes first.</strong> The Foundation (Google, Visa, AWS, Circle, Anthropic, Cloudflare) could add a dispute layer. Mitigation: become the reference implementation inside that standard process — standards bodies adopt working code, not specs. Our PR to #1645 is already that reference.</p>
+      <p class="section-body" style="margin-bottom:0.8rem;"><strong>Risk 2 — organic agent commerce stays small.</strong> The 86% gaming figure is real; volume may not grow. Mitigation: the evidence/receipts layer has standalone demand today — enterprise fleets need "close the books" for agent spend (Sequoia: "the next legendary company will just close the books"). The dispute layer becomes the reputation trust layer either way.</p>
+      <p class="section-body"><strong>Risk 3 — adversarial evidence gaming the AI arbiter.</strong> Launch objective-tiers-only (Tier-0 covers 80%+ of disputes by value), expand to semi-objective (schema conformance, latency SLAs) as the public rulebook hardens. TEE-hosted arbiter + signed attestations make gaming cost exceed dispute value.</p>
+    </section>
+
+  </main>
+
+  <footer>
+    <p class="credit">Built for <strong>Agents Onchain</strong> (KeeperHub hackathon) · Aug 2026 · <a href="#" style="color:var(--text-subtle);text-decoration:underline;">GitHub</a> · <a href="#" style="color:var(--text-subtle);text-decoration:underline;">Demo video (Playwright + Edge TTS narration)</a></p>
+    <p class="credit">Recourse — the buyer-protection layer the agent economy forgot to build.</p>
+  </footer>
+
+</body>
+</html>

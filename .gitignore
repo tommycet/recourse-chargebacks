@@ -1,0 +1,10 @@
+node_modules/
+cache/
+*.log
+.DS_Store
+video/*.webm
+video/final.png
+contracts/cache/
+contracts/out/
+contracts/lib/
+!contracts/lib/.gitkeep
