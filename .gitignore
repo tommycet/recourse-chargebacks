@@ -8,3 +8,6 @@ contracts/cache/
 contracts/out/
 contracts/lib/
 !contracts/lib/.gitkeep
+.env
+demo/node_modules/
+demo/deployed.json

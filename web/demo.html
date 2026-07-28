@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recourse Escrow — Chargebacks for the Machine Economy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050505;
+    --surface: rgba(18,18,18,0.85);
+    --surface2: rgba(26,26,26,0.9);
+    --glass: rgba(255,255,255,0.03);
+    --glass-border: rgba(255,255,255,0.06);
+    --ink: #f0ede6;
+    --ink2: #8a8578;
+    --ink3: #5a5548;
+    --accent: #c84e14;
+    --accent-glow: rgba(200,78,20,0.15);
+    --accent2: #e8a065;
+    --green: #4a9e5c;
+    --green-bg: rgba(74,158,92,0.1);
+    --red: #c84e4e;
+    --red-bg: rgba(200,78,78,0.1);
+    --blue: #4a7ec8;
+    --blue-bg: rgba(74,126,200,0.1);
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+    --shadow-lg: 0 2px 4px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.3);
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, system-ui, sans-serif;
+    --backdrop: blur(20px) saturate(1.2);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { font-size: 14px; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); min-height:100vh; overflow-x:hidden; }
+  body::before {
+    content:''; position:fixed; top:0; left:0; right:0; bottom:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 600px 400px at 15% 20%, rgba(200,78,20,0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 500px 500px at 85% 80%, rgba(74,126,200,0.03) 0%, transparent 70%);
+  }
+  .app { position:relative; z-index:1; display:grid; grid-template-columns:260px 1fr 340px; grid-template-rows:auto 1fr; height:100vh; }
+
+  /* ── Top Nav ── */
+  .nav { grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; padding:0 28px; height:56px;
+    border-bottom:1px solid var(--border); background:var(--surface); backdrop-filter:var(--backdrop); }
+  .nav-brand { display:flex; align-items:center; gap:10px; }
+  .nav-brand .logo { width:28px; height:28px; border-radius:6px; background:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; color:#fff; }
+  .nav-brand h1 { font-size:15px; font-weight:600; letter-spacing:-0.3px; }
+  .nav-brand h1 span { color:var(--accent); }
+  .nav-right { display:flex; align-items:center; gap:16px; }
+  .chain-badge { font-family:var(--mono); font-size:11px; padding:4px 10px; border:1px solid var(--border2); border-radius:6px; color:var(--ink2); letter-spacing:0.3px; }
+  .chain-badge .dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--red); margin-right:6px; }
+  .chain-badge .dot.on { background:var(--green); }
+  .wallet-pill { display:flex; align-items:center; gap:8px; padding:6px 14px; border-radius:20px;
+    background:var(--surface2); border:1px solid var(--border); font-family:var(--mono); font-size:12px; cursor:pointer; transition: all 0.2s; }
+  .wallet-pill:hover { border-color:var(--accent); background:var(--accent-glow); }
+  .wallet-pill .bal { color:var(--accent2); }
+
+  /* ── Left Sidebar ── */
+  .sidebar { border-right:1px solid var(--border); background:var(--surface); backdrop-filter:var(--backdrop); padding:20px; overflow-y:auto; }
+  .sidebar h3 { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1.2px; color:var(--ink3); margin-bottom:12px; }
+  .sidebar-section { margin-bottom:24px; }
+  .sidebar-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; }
+  .sidebar-item:last-child { border-bottom:none; }
+  .sidebar-item .label { color:var(--ink2); }
+  .sidebar-item .value { font-family:var(--mono); font-size:11px; color:var(--ink); word-break:break-all; text-align:right; max-width:150px; }
+  .sidebar-item .value.accent { color:var(--accent); }
+  .sidebar-item .value.green { color:var(--green); }
+  .sidebar-item a { color:var(--accent2); text-decoration:none; font-family:var(--mono); font-size:11px; }
+  .sidebar-item a:hover { text-decoration:underline; }
+  .escrow-list { display:flex; flex-direction:column; gap:6px; }
+  .escrow-chip { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--radius-sm); background:var(--glass); border:1px solid var(--border);
+    font-size:12px; cursor:pointer; transition:all 0.15s; }
+  .escrow-chip:hover, .escrow-chip.active { border-color:var(--accent); background:var(--accent-glow); }
+  .escrow-chip .id { font-family:var(--mono); font-weight:600; color:var(--accent); }
+  .escrow-chip .amt { font-family:var(--mono); color:var(--ink2); margin-left:auto; }
+  .status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .status-dot.active { background:var(--green); }
+  .status-dot.disputed { background:var(--red); }
+  .status-dot.resolved { background:var(--blue); }
+  .status-dot.confirmed { background:var(--accent); }
+
+  /* ── Center Main ── */
+  .main { padding:28px; overflow-y:auto; }
+  .panel { background:var(--surface); backdrop-filter:var(--backdrop); border:1px solid var(--border); border-radius:var(--radius);
+    padding:24px; margin-bottom:20px; box-shadow:var(--shadow); }
+  .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .panel-header h2 { font-size:16px; font-weight:600; letter-spacing:-0.3px; }
+  .panel-header .badge { font-family:var(--mono); font-size:10px; padding:3px 8px; border-radius:4px; letter-spacing:0.5px; }
+  .badge-green { background:var(--green-bg); color:var(--green); border:1px solid rgba(74,158,92,0.2); }
+  .badge-red { background:var(--red-bg); color:var(--red); border:1px solid rgba(200,78,78,0.2); }
+  .badge-blue { background:var(--blue-bg); color:var(--blue); border:1px solid rgba(74,126,200,0.2); }
+  .badge-amber { background:var(--accent-glow); color:var(--accent); border:1px solid rgba(200,78,20,0.2); }
+
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:11px; font-weight:500; color:var(--ink2); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px; }
+  .field input, .field select {
+    width:100%; padding:10px 14px; background:var(--glass); border:1px solid var(--border2); border-radius:var(--radius-sm);
+    color:var(--ink); font-family:var(--mono); font-size:13px; transition:border-color 0.2s; }
+  .field input:focus, .field select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
+  .field input::placeholder { color:var(--ink3); }
+  .field input[readonly] { opacity:0.7; cursor:default; }
+  .row { display:flex; gap:12px; }
+  .row > * { flex:1; }
+
+  /* ── Buttons ── */
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 20px; font-size:13px; font-weight:600;
+    border:none; border-radius:var(--radius-sm); cursor:pointer; transition:all 0.2s; font-family:var(--sans); letter-spacing:-0.1px; }
+  .btn:hover { transform:translateY(-1px); box-shadow:var(--shadow-lg); }
+  .btn:active { transform:translateY(0); }
+  .btn:disabled { opacity:0.35; cursor:not-allowed; transform:none; box-shadow:none; }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover:not(:disabled) { background:#d95a1e; }
+  .btn-secondary { background:var(--surface2); color:var(--ink); border:1px solid var(--border2); }
+  .btn-secondary:hover:not(:disabled) { border-color:var(--ink3); }
+  .btn-green { background:var(--green); color:#fff; }
+  .btn-green:hover:not(:disabled) { background:#55b068; }
+  .btn-red { background:var(--red); color:#fff; }
+  .btn-red:hover:not(:disabled) { background:#d45c5c; }
+  .btn-ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .btn-ghost:hover:not(:disabled) { background:var(--accent-glow); }
+  .btn-sm { padding:6px 14px; font-size:12px; }
+  .btn-icon { width:36px; height:36px; padding:0; border-radius:8px; }
+
+  .btn-group { display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* ── Right Log ── */
+  .log-panel { border-left:1px solid var(--border); background:var(--surface); backdrop-filter:var(--backdrop);
+    display:flex; flex-direction:column; }
+  .log-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .log-header h3 { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--ink2); }
+  .log-body { flex:1; overflow-y:auto; padding:12px; }
+  .log-entry { padding:8px 10px; border-radius:var(--radius-sm); margin-bottom:4px; font-size:12px; line-height:1.5;
+    background:var(--glass); border:1px solid transparent; transition:border-color 0.15s; }
+  .log-entry:hover { border-color:var(--border2); }
+  .log-entry .log-ts { font-family:var(--mono); font-size:10px; color:var(--ink3); }
+  .log-entry .log-msg { margin-top:2px; }
+  .log-entry .log-msg.ok { color:var(--green); }
+  .log-entry .log-msg.err { color:var(--red); }
+  .log-entry .log-msg.info { color:var(--accent2); }
+  .log-entry .log-msg.warn { color:var(--accent); }
+  .log-entry .log-link { color:var(--accent2); text-decoration:none; font-family:var(--mono); font-size:11px; word-break:break-all; }
+  .log-entry .log-link:hover { text-decoration:underline; }
+  .log-entry .log-gas { font-family:var(--mono); font-size:10px; color:var(--ink3); margin-top:2px; }
+  .log-empty { text-align:center; padding:40px 20px; color:var(--ink3); font-size:13px; }
+
+  /* ── Connect Overlay ── */
+  .connect-overlay { display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:calc(100vh - 56px); text-align:center; padding:40px; }
+  .connect-card { max-width:420px; width:100%; }
+  .connect-icon { width:64px; height:64px; border-radius:16px; background:var(--accent-glow); border:1px solid rgba(200,78,20,0.2);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 24px; font-size:28px; }
+  .connect-title { font-size:28px; font-weight:700; letter-spacing:-0.5px; margin-bottom:8px; }
+  .connect-title span { color:var(--accent); }
+  .connect-sub { color:var(--ink2); font-size:14px; margin-bottom:32px; line-height:1.6; }
+  .connect-btns { display:flex; flex-direction:column; gap:12px; }
+  .connect-btns .btn { padding:14px 24px; font-size:14px; }
+  .or-divider { display:flex; align-items:center; gap:12px; color:var(--ink3); font-size:12px; margin:4px 0; }
+  .or-divider::before, .or-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* ── Status Badges ── */
+  .status-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 8px;
+    border-radius:4px; letter-spacing:0.3px; }
+  .sb-active { background:var(--green-bg); color:var(--green); }
+  .sb-disputed { background:var(--red-bg); color:var(--red); }
+  .sb-resolved { background:var(--blue-bg); color:var(--blue); }
+  .sb-confirmed { background:var(--accent-glow); color:var(--accent); }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--ink3); }
+
+  /* ── Loading spinner ── */
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border2); border-top-color:var(--accent);
+    border-radius:50%; animation:spin 0.6s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ── Mobile ── */
+  @media (max-width:1024px) {
+    .app { grid-template-columns:1fr; grid-template-rows:auto 1fr auto; }
+    .sidebar { display:none; }
+    .log-panel { border-left:none; border-top:1px solid var(--border); max-height:250px; }
+  }
+  @media (max-width:640px) {
+    .nav { padding:0 16px; }
+    .main { padding:16px; }
+    .row { flex-direction:column; }
+  }
+
+  /* ── Animations ── */
+  .fade-in { animation:fadeIn 0.3s ease-out; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- Top Nav -->
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="logo">R</div>
+      <h1>Recourse <span>Escrow</span></h1>
+    </div>
+    <div class="nav-right">
+      <span class="chain-badge" id="chainBadge"><span class="dot" id="chainDot"></span><span id="chainText">Disconnected</span></span>
+      <div class="wallet-pill" id="walletPill" onclick="handleConnect()" style="cursor:pointer">
+        <span id="walletText">Connect Wallet</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Left Sidebar -->
+  <aside class="sidebar" id="sidebar" style="display:none">
+    <div class="sidebar-section">
+      <h3>Contract</h3>
+      <div class="sidebar-item">
+        <span class="label">Escrow</span>
+        <a class="value" id="sideContractAddr" href="#" target="_blank">—</a>
+      </div>
+      <div class="sidebar-item">
+        <span class="label">USDC</span>
+        <a class="value" id="sideUsdcAddr" href="#" target="_blank">—</a>
+      </div>
+      <div class="sidebar-item">
+        <span class="label">Arbiter</span>
+        <span class="value" id="sideArbiter">—</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="label">Chain</span>
+        <span class="value accent" id="sideChainId">—</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Balances</h3>
+      <div class="sidebar-item">
+        <span class="label">ETH</span>
+        <span class="value" id="sideEthBal">—</span>
+      </div>
+      <div class="sidebar-item">
+        <span class="label">USDC</span>
+        <span class="value accent" id="sideUsdcBal">—</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Escrows</h3>
+      <div class="escrow-list" id="escrowList">
+        <div style="font-size:11px;color:var(--ink3)">No escrows yet</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Center Main -->
+  <main class="main" id="mainArea">
+    <!-- Connect Screen (shown when not connected) -->
+    <div id="connectScreen" class="connect-overlay">
+      <div class="connect-card panel fade-in">
+        <div class="connect-icon">⟐</div>
+        <div class="connect-title">Recourse <span>Escrow</span></div>
+        <div class="connect-sub">Chargebacks for the machine economy.<br>Real USDC, real on-chain escrow, real dispute resolution.</div>
+        <div class="connect-btns">
+          <button class="btn btn-primary" onclick="connectMetaMask()">🦊 Connect MetaMask</button>
+          <div class="or-divider">or</div>
+          <button class="btn btn-ghost" onclick="connectDemo()">⚡ Demo Mode (Anvil Local)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace (shown after connect) -->
+    <div id="workspace" style="display:none">
+      <!-- Create Escrow Panel -->
+      <div class="panel fade-in" id="createPanel">
+        <div class="panel-header">
+          <h2>Create Escrow</h2>
+          <span class="badge badge-green">STEP 1</span>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Amount (USDC)</label>
+            <input id="inputAmount" value="10" type="number" step="0.01" min="0">
+          </div>
+          <div class="field">
+            <label>Seller Address</label>
+            <input id="inputSeller" placeholder="0x..." type="text">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Task Description</label>
+            <input id="inputTask" value="summarize-article-2026" type="text">
+          </div>
+          <div class="field">
+            <label>Evidence Hash</label>
+            <input id="inputEvidence" placeholder="auto-generated if empty" type="text">
+          </div>
+        </div>
+        <div class="btn-group" style="margin-top:8px">
+          <button class="btn btn-primary" id="createBtn" onclick="doCreateEscrow()">Approve USDC &amp; Create Escrow</button>
+          <button class="btn btn-secondary btn-sm" onclick="refreshState()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <!-- Escrow Actions Panel -->
+      <div class="panel fade-in" id="actionPanel" style="display:none">
+        <div class="panel-header">
+          <h2>Escrow Actions</h2>
+          <span class="badge badge-amber" id="escrowStatusBadge">—</span>
+        </div>
+        <div class="sidebar-item" style="margin-bottom:12px">
+          <span class="label">Escrow ID</span>
+          <span class="value accent" id="actionEscrowId">—</span>
+        </div>
+        <div class="sidebar-item" style="margin-bottom:12px">
+          <span class="label">Amount</span>
+          <span class="value" id="actionAmount">—</span>
+        </div>
+        <div class="sidebar-item" style="margin-bottom:16px">
+          <span class="label">Buyer / Seller</span>
+          <span class="value" id="actionParties" style="font-size:10px">—</span>
+        </div>
+        <div class="btn-group" id="actionBtns">
+          <button class="btn btn-green" id="confirmBtn" onclick="doConfirmDelivery()">✓ Confirm Delivery</button>
+          <button class="btn btn-red" id="disputeBtn" onclick="doRaiseDispute()">⚠ Raise Dispute</button>
+        </div>
+        <div style="border-top:1px solid var(--border); margin:16px 0; padding-top:16px" id="arbiterSection" style="display:none">
+          <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:600">Arbiter Resolution</div>
+          <div class="btn-group">
+            <button class="btn btn-secondary" onclick="doResolve(true)">Buyer Wins (Refund)</button>
+            <button class="btn btn-secondary" onclick="doResolve(false)">Seller Wins (Payout)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Right Transaction Log -->
+  <aside class="log-panel" id="logPanel" style="display:none">
+    <div class="log-header">
+      <h3>Transaction Log</h3>
+      <button class="btn btn-secondary btn-sm" onclick="clearLog()" style="padding:4px 10px;font-size:10px">Clear</button>
+    </div>
+    <div class="log-body" id="logBody">
+      <div class="log-empty">No transactions yet</div>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+//  Recourse Escrow — Frontend Controller
+// ═══════════════════════════════════════════════════════
+
+const CONFIG = {
+  anvil: {
+    rpc: 'http://127.0.0.1:8545',
+    chainId: 31337,
+    explorer: 'http://localhost',
+    contractAddr: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+    usdcAddr: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+    arbiter: '0xf39Fd6e51aad88F6F4ce6aB8827279cfFfB92266',
+    demoKey: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+  },
+  sepolia: {
+    rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
+    chainId: 11155111,
+    explorer: 'https://sepolia.etherscan.io'
+  }
+};
+
+const ESCROW_ABI = [
+  {"inputs":[],"name":"USDC","outputs":[{"name":"","type":"address"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"arbiter","outputs":[{"name":"","type":"address"}],"stateMutability":"view","type":"function"},
+  {"inputs":[],"name":"nextId","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"name":"","type":"uint256"}],"name":"escrows","outputs":[
+    {"name":"buyer","type":"address"},{"name":"seller","type":"address"},{"name":"amount","type":"uint256"},
+    {"name":"taskId","type":"bytes32"},{"name":"evidenceBundleHash","type":"bytes32"},{"name":"createdAt","type":"uint256"},
+    {"name":"delivered","type":"bool"},{"name":"disputed","type":"bool"},{"name":"resolved","type":"bool"},
+    {"name":"disputeRaisedAt","type":"uint256"},{"name":"payoutTo","type":"address"}
+  ],"stateMutability":"view","type":"function"},
+  {"inputs":[{"name":"id","type":"uint256"}],"name":"statusOf","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"name":"buyer","type":"address"},{"name":"seller","type":"address"},{"name":"amount","type":"uint256"},{"name":"taskId","type":"bytes32"},{"name":"evidenceBundleHash","type":"bytes32"}],"name":"createEscrow","outputs":[{"name":"id","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"name":"id","type":"uint256"},{"name":"evidenceHash","type":"bytes32"}],"name":"confirmDelivery","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"name":"id","type":"uint256"},{"name":"disputeEvidenceHash","type":"bytes32"}],"name":"raiseDispute","outputs":[],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[{"name":"id","type":"uint256"},{"name":"buyerWins","type":"bool"},{"name":"payoutTo","type":"address"}],"name":"resolveDispute","outputs":[],"stateMutability":"nonpayable","type":"function"},
+];
+
+const ERC20_ABI = [
+  {"inputs":[{"name":"account","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"name":"spender","type":"address"},{"name":"amount","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+  {"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
+  {"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},
+];
+
+let provider, signer, walletAddr, isDemo = false, escrowContractAddr, usdcAddr, arbiterAddr, explorerBase;
+let currentEscrowId = null;
+const STATUS_NAMES = ['Active','Confirmed','Disputed','Resolved','Refunded'];
+
+// ── Logging ──
+function log(msg, type='info', txHash=null, gas=null) {
+  const body = document.getElementById('logBody');
+  const empty = body.querySelector('.log-empty');
+  if (empty) empty.remove();
+  const ts = new Date().toLocaleTimeString('en-US',{hour12:false});
+  const div = document.createElement('div');
+  div.className = 'log-entry fade-in';
+  let html = `<div class="log-ts">${ts}</div><div class="log-msg ${type}">${escHtml(msg)}</div>`;
+  if (txHash) {
+    const url = explorerBase ? `${explorerBase}/tx/${txHash}` : '#';
+    html += `<div class="log-link"><a href="${url}" target="_blank">${txHash.slice(0,10)}...${txHash.slice(-6)}</a></div>`;
+  }
+  if (gas !== null) html += `<div class="log-gas">Gas: ${Number(gas).toLocaleString()}</div>`;
+  div.innerHTML = html;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+function clearLog() {
+  document.getElementById('logBody').innerHTML = '<div class="log-empty">No transactions yet</div>';
+}
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Connect ──
+async function connectMetaMask() {
+  if (!window.ethereum) { log('MetaMask not found. Install MetaMask or use Demo Mode.','err'); return; }
+  try {
+    const accounts = await window.ethereum.request({method:'eth_requestAccounts'});
+    walletAddr = accounts[0];
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+    isDemo = false;
+
+    const net = await provider.getNetwork();
+    if (net.chainId === 31337) {
+      // Connected to Anvil — try to load deployed.json
+      await initLocalContracts();
+    } else if (net.chainId === 11155111) {
+      explorerBase = CONFIG.sepolia.explorer;
+      log('Connected to Sepolia. Deploy contract first if needed.','warn');
+    } else {
+      log(`Chain ${net.chainId} — switch to Anvil (31337) or Sepolia (11155111).`,'warn');
+    }
+    onConnected(net.chainId);
+  } catch(e) { log('Connect failed: '+e.message,'err'); }
+}
+
+async function connectDemo() {
+  try {
+    const pk = CONFIG.anvil.demoKey;
+    const rpc = CONFIG.anvil.rpc;
+    provider = new ethers.providers.JsonRpcProvider(rpc);
+    const wallet = new ethers.Wallet(pk, provider);
+    signer = wallet;
+    walletAddr = wallet.address;
+    isDemo = true;
+    explorerBase = CONFIG.anvil.explorer;
+
+    // Use known Anvil addresses
+    escrowContractAddr = CONFIG.anvil.contractAddr;
+    usdcAddr = CONFIG.anvil.usdcAddr;
+    arbiterAddr = CONFIG.anvil.arbiter;
+
+    log('Demo Mode: connected to local Anvil','ok');
+    log('Account: ' + walletAddr,'info');
+    onConnected(31337);
+  } catch(e) { log('Demo connect failed: '+e.message,'err'); }
+}
+
+async function initLocalContracts() {
+  // Try reading deployed.json via fetch (works if served from same origin)
+  try {
+    const resp = await fetch('./deployed.json');
+    if (resp.ok) {
+      const data = await resp.json();
+      escrowContractAddr = data.address || CONFIG.anvil.contractAddr;
+      usdcAddr = data.usdc || CONFIG.anvil.usdcAddr;
+      arbiterAddr = data.arbiter || CONFIG.anvil.arbiter;
+      return;
+    }
+  } catch(e) {}
+  // Fallback to hardcoded Anvil
+  escrowContractAddr = CONFIG.anvil.contractAddr;
+  usdcAddr = CONFIG.anvil.usdcAddr;
+  arbiterAddr = CONFIG.anvil.arbiter;
+}
+
+function onConnected(chainId) {
+  document.getElementById('connectScreen').style.display = 'none';
+  document.getElementById('workspace').style.display = '';
+  document.getElementById('sidebar').style.display = '';
+  document.getElementById('logPanel').style.display = '';
+
+  const dot = document.getElementById('chainDot');
+  dot.classList.add('on');
+  document.getElementById('chainText').textContent = chainId === 31337 ? 'Anvil Local' : 'Sepolia';
+  document.getElementById('chainBadge').title = 'Chain ' + chainId;
+
+  document.getElementById('walletText').textContent = walletAddr.slice(0,6)+'...'+walletAddr.slice(-4);
+  document.getElementById('walletPill').onclick = null;
+
+  // Show arbiter section only if connected as arbiter
+  if (arbiterAddr && walletAddr.toLowerCase() === arbiterAddr.toLowerCase()) {
+    document.getElementById('arbiterSection').style.display = '';
+    log('Connected as arbiter — dispute resolution enabled','ok');
+  } else {
+    document.getElementById('arbiterSection').style.display = 'none';
+  }
+
+  refreshState();
+}
+
+// ── State Refresh ──
+async function refreshState() {
+  if (!provider) return;
+  try {
+    // ETH balance
+    const ethBal = await provider.getBalance(walletAddr);
+    document.getElementById('sideEthBal').textContent = parseFloat(ethers.utils.formatEther(ethBal)).toFixed(4);
+
+    // Contract info
+    if (escrowContractAddr) {
+      const escrow = new ethers.Contract(escrowContractAddr, ESCROW_ABI, provider);
+      document.getElementById('sideContractAddr').textContent = escrowContractAddr.slice(0,6)+'...'+escrowContractAddr.slice(-4);
+      document.getElementById('sideContractAddr').href = (explorerBase||'') + '/address/' + escrowContractAddr;
+
+      // Read USDC from contract
+      try {
+        usdcAddr = await escrow.USDC();
+        document.getElementById('sideUsdcAddr').textContent = usdcAddr.slice(0,6)+'...'+usdcAddr.slice(-4);
+        document.getElementById('sideUsdcAddr').href = (explorerBase||'') + '/address/' + usdcAddr;
+      } catch(e) {}
+
+      try {
+        arbiterAddr = await escrow.arbiter();
+        document.getElementById('sideArbiter').textContent = arbiterAddr.slice(0,6)+'...'+arbiterAddr.slice(-4);
+        if (walletAddr.toLowerCase() === arbiterAddr.toLowerCase()) {
+          document.getElementById('arbiterSection').style.display = '';
+        }
+      } catch(e) {}
+
+      // USDC balance
+      if (usdcAddr) {
+        const usdc = new ethers.Contract(usdcAddr, ERC20_ABI, provider);
+        const bal = await usdc.balanceOf(walletAddr);
+        document.getElementById('sideUsdcBal').textContent = parseFloat(ethers.utils.formatUnits(bal,6)).toFixed(2);
+      }
+
+      // Load escrows
+      await loadEscrows(escrow);
+    }
+
+    document.getElementById('sideChainId').textContent = (await provider.getNetwork()).chainId;
+    document.getElementById('inputSeller').value = walletAddr;
+  } catch(e) { console.error('refreshState:',e); }
+}
+
+async function loadEscrows(escrow) {
+  const list = document.getElementById('escrowList');
+  list.innerHTML = '';
+  try {
+    const nextId = await escrow.nextId();
+    let count = 0;
+    for (let i = BigInt(1); i < nextId; i++) {
+      try {
+        const e = await escrow.escrows(i);
+        if (e.buyer === ethers.constants.AddressZero) continue;
+        const statusNum = await escrow.statusOf(i);
+        const status = STATUS_NAMES[Number(statusNum)];
+        const chip = document.createElement('div');
+        chip.className = 'escrow-chip';
+        chip.onclick = () => selectEscrow(i, e, status);
+        const dotClass = status === 'Active' ? 'active' : status === 'Disputed' ? 'disputed' : status === 'Resolved' ? 'resolved' : 'confirmed';
+        chip.innerHTML = `<span class="status-dot ${dotClass}"></span><span class="id">#${i}</span><span style="font-size:11px;color:var(--ink2)">${status}</span><span class="amt">${parseFloat(ethers.utils.formatUnits(e.amount,6)).toFixed(2)}</span>`;
+        list.appendChild(chip);
+        count++;
+      } catch(e) {}
+    }
+    if (count === 0) list.innerHTML = '<div style="font-size:11px;color:var(--ink3)">No escrows yet</div>';
+  } catch(e) { list.innerHTML = '<div style="font-size:11px;color:var(--ink3)">No escrows</div>'; }
+}
+
+function selectEscrow(id, data, status) {
+  currentEscrowId = id;
+  document.getElementById('actionPanel').style.display = '';
+  document.getElementById('actionEscrowId').textContent = '#' + id;
+  document.getElementById('actionAmount').textContent = parseFloat(ethers.utils.formatUnits(data.amount,6)).toFixed(2) + ' USDC';
+  document.getElementById('actionParties').textContent = data.buyer.slice(0,8)+'... → ' + data.seller.slice(0,8)+'...';
+
+  const badge = document.getElementById('escrowStatusBadge');
+  badge.textContent = status;
+  badge.className = 'badge ' + (status==='Active'?'badge-green':status==='Disputed'?'badge-red':status==='Resolved'?'badge-blue':'badge-amber');
+
+  // Show/hide action buttons based on status
+  const confirmBtn = document.getElementById('confirmBtn');
+  const disputeBtn = document.getElementById('disputeBtn');
+  if (status === 'Active') {
+    confirmBtn.style.display = '';
+    disputeBtn.style.display = '';
+  } else {
+    confirmBtn.style.display = 'none';
+    disputeBtn.style.display = 'none';
+  }
+}
+
+// ── Create Escrow ──
+async function doCreateEscrow() {
+  if (!escrowContractAddr) { log('No contract deployed','err'); return; }
+  const amount = ethers.utils.parseUnits(document.getElementById('inputAmount').value, 6);
+  const seller = document.getElementById('inputSeller').value || walletAddr;
+  const taskDesc = document.getElementById('inputTask').value || 'demo-task-' + Date.now();
+  let evHash = document.getElementById('inputEvidence').value;
+  if (!evHash || evHash === '0x' + '0'.repeat(64)) {
+    evHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(taskDesc + '-' + Date.now()));
+  }
+
+  const usdc = new ethers.Contract(usdcAddr, ERC20_ABI, signer);
+  const escrow = new ethers.Contract(escrowContractAddr, ESCROW_ABI, signer);
+
+  try {
+    // If on Anvil and balance is 0, mint first
+    if (isDemo) {
+      const bal = await usdc.balanceOf(walletAddr);
+      if (bal.lt(amount)) {
+        log('Minting test USDC...','info');
+        const mintTx = await usdc.mint(walletAddr, amount.mul(10));
+        const mintRc = await mintTx.wait();
+        log('Minted ' + parseFloat(ethers.utils.formatUnits(amount.mul(10),6)).toFixed(2) + ' USDC','ok', mintTx.hash, mintRc.gasUsed);
+      }
+    }
+
+    // Step 1: Approve
+    log('Approving USDC for escrow contract...','info');
+    const approveTx = await usdc.approve(escrowContractAddr, amount);
+    const approveRc = await approveTx.wait();
+    log('USDC approved: ' + parseFloat(ethers.utils.formatUnits(amount,6)).toFixed(2) + ' USDC','ok', approveTx.hash, approveRc.gasUsed);
+
+    // Step 2: Create escrow
+    log('Creating escrow...','info');
+    const createTx = await escrow.createEscrow(walletAddr, seller, amount, ethers.utils.id(taskDesc), evHash);
+    const createRc = await createTx.wait();
+
+    // Parse escrow ID from event (id is indexed → in topics[1])
+    let escrowId = null;
+    for (const logEntry of createRc.logs) {
+      try {
+        const parsed = escrow.interface.parseLog(logEntry);
+        if (parsed.name === 'EscrowCreated') {
+          // In ethers v5, indexed params are in args
+          escrowId = Number(parsed.args.id || parsed.args[0]);
+          currentEscrowId = escrowId;
+          break;
+        }
+      } catch(e) {}
+    }
+    // Fallback: read from topics
+    if (!escrowId) {
+      for (const logEntry of createRc.logs) {
+        if (logEntry.topics && logEntry.topics.length >= 2) {
+          const possibleId = parseInt(logEntry.topics[1], 16);
+          if (possibleId > 0 && possibleId < 10000) { escrowId = possibleId; currentEscrowId = escrowId; break; }
+        }
+      }
+    }
+    if (!escrowId) {
+      // Last resort: read nextId - 1
+      escrowId = Number(await escrow.nextId()) - 1;
+      currentEscrowId = escrowId;
+    }
+    log('Escrow #' + escrowId + ' created','ok', createTx.hash, createRc.gasUsed);
+
+    // Auto-select the new escrow
+    const e = await escrow.escrows(escrowId);
+    selectEscrow(escrowId, e, 'Active');
+
+    await refreshState();
+  } catch(e) {
+    const msg = e.reason || e.message || String(e);
+    log('Error: ' + msg.slice(0,200),'err');
+  }
+}
+
+// ── Confirm Delivery ──
+async function doConfirmDelivery() {
+  if (!currentEscrowId) { log('Select an escrow first','err'); return; }
+  const escrow = new ethers.Contract(escrowContractAddr, ESCROW_ABI, signer);
+  const evHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('delivery-confirmed-' + currentEscrowId + '-' + Date.now()));
+  try {
+    log('Confirming delivery for escrow #' + currentEscrowId + '...','info');
+    const tx = await escrow.confirmDelivery(currentEscrowId, evHash);
+    const rc = await tx.wait();
+    log('Delivery confirmed — USDC released to seller','ok', tx.hash, rc.gasUsed);
+    await refreshState();
+    // Re-select to update UI
+    const e = await escrow.escrows(currentEscrowId);
+    selectEscrow(currentEscrowId, e, 'Confirmed');
+  } catch(e) {
+    log('Error: ' + (e.reason||e.message).slice(0,200),'err');
+  }
+}
+
+// ── Raise Dispute ──
+async function doRaiseDispute() {
+  if (!currentEscrowId) { log('Select an escrow first','err'); return; }
+  const escrow = new ethers.Contract(escrowContractAddr, ESCROW_ABI, signer);
+  const evHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('dispute-evidence-' + currentEscrowId + '-' + Date.now()));
+  try {
+    log('Raising dispute on escrow #' + currentEscrowId + '...','info');
+    const tx = await escrow.raiseDispute(currentEscrowId, evHash);
+    const rc = await tx.wait();
+    log('Dispute raised — escrow frozen','err', tx.hash, rc.gasUsed);
+    await refreshState();
+    const e = await escrow.escrows(currentEscrowId);
+    selectEscrow(currentEscrowId, e, 'Disputed');
+  } catch(e) {
+    log('Error: ' + (e.reason||e.message).slice(0,200),'err');
+  }
+}
+
+// ── Resolve Dispute (arbiter only) ──
+async function doResolve(buyerWins) {
+  if (!currentEscrowId) { log('Select an escrow first','err'); return; }
+  const escrow = new ethers.Contract(escrowContractAddr, ESCROW_ABI, signer);
+  const payoutTo = buyerWins ?
+    (await escrow.escrows(currentEscrowId)).buyer :
+    (await escrow.escrows(currentEscrowId)).seller;
+  try {
+    log('Arbiter resolving: ' + (buyerWins ? 'BUYER WINS' : 'SELLER WINS') + '...','info');
+    const tx = await escrow.resolveDispute(currentEscrowId, buyerWins, payoutTo);
+    const rc = await tx.wait();
+    log('Resolved! ' + (buyerWins ? 'Refunded to buyer' : 'Paid to seller'),'ok', tx.hash, rc.gasUsed);
+    await refreshState();
+    const e = await escrow.escrows(currentEscrowId);
+    selectEscrow(currentEscrowId, e, 'Resolved');
+  } catch(e) {
+    log('Error: ' + (e.reason||e.message).slice(0,200),'err');
+  }
+}
+
+// ── Handle connect pill ──
+function handleConnect() { connectMetaMask(); }
+</script>
+</body>
+</html>

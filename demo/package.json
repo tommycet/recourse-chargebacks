@@ -1,0 +1,14 @@
+{
+  "name": "recourse-sepolia-demo",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "scripts": {
+    "demo": "node demo.mjs",
+    "demo:auto-refund": "node demo.mjs --auto-refund",
+    "demo:dispute": "node demo.mjs --dispute",
+    "deploy": "node deploy.mjs"
+  }
+}
