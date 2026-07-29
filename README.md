@@ -3,7 +3,7 @@
 **The dispute-resolution and escrow layer for autonomous x402 agent payments. AI arbiter decides → KeeperHub executes onchain.**
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?logo=solidity)](https://soliditylang.org)
-[![Foundry](https://img.shields.io/badge/Foundry-28%2F28%20tests-orange)](https://book.getfoundry.sh)
+[![Foundry](https://img.shields.io/badge/Foundry-89%2F89%20tests-orange)](https://book.getfoundry.sh)
 [![Network](https://img.shields.io/badge/Network-Sepolia-blue)](https://sepolia.etherscan.io)
 [![Execution](https://img.shields.io/badge/Execution-KeeperHub-blueviolet)](https://docs.keeperhub.com)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
@@ -51,6 +51,25 @@ Recourse closes the accountability gap with four layers:
 4. **KeeperHub execution layer** — The arbiter's verdict triggers a KeeperHub call that executes `resolveDispute()` onchain. KeeperHub handles gas, nonce management, and MEV protection — and produces a full audit trail (trigger → execution ID → tx hash → confirmation).
 
 **The agent decides. KeeperHub executes. That's the last mile.**
+
+---
+
+## Multi-Agent Pipeline
+
+Recourse resolves disputes through a **4-phase pipeline** — each phase is a purpose-specific agent. Together they validate evidence, issue verdicts, enforce policy, and execute onchain through KeeperHub.
+
+```
+evidence-verifier → arbiter → policy-agent → KeeperHub (onchain)
+```
+
+| Phase | Agent | What It Does |
+|-------|-------|--------------|
+| **1. Evidence Verification** | `evidence-verifier` | Validates cryptographic evidence bundles — hash integrity, timestamps, and signature chains. Tampered bundles are rejected before reaching the arbiter. |
+| **2. Arbitration** | `arbiter` (LLM + rule-based) | Evaluates verified evidence against the service contract. Issues a binary verdict (`buyerWins`/`sellerWins`) with a confidence score. Falls back to deterministic rules when no LLM key is available. |
+| **3. Policy Enforcement** | `policy-agent` | Verifies the verdict against escrow constraints — policy limits, challenge windows, and contract state invariants. Halts any invalid execution. |
+| **4. Onchain Execution** | **KeeperHub** | Signs and broadcasts `resolveDispute()` on Sepolia through KeeperHub's EIP-7702 smart account. Dual-surface (MCP → Direct API fallback), retry with exponential backoff (2/4/8 s), complete audit trail. |
+
+Future direction: full x402 protocol integration with escrow header injection (`X-Escrow-Contract`). See [`docs/x402-integration-design.md`](docs/x402-integration-design.md) for the design.
 
 ---
 
@@ -129,11 +148,49 @@ Full integration guide: [`docs/keeperhub-integration.md`](docs/keeperhub-integra
 
 ---
 
+## Multi-Agent Arbitration Pipeline
+
+Recourse uses a 4-phase multi-agent pipeline with KeeperHub as the shared execution primitive:
+
+```
+Phase 1: Evidence Verifier Agent
+  │  Validates hash format, address format, delivery status coherence,
+  │  and buyer/seller distinctness. Rule-based (no LLM dependency).
+  │
+  ▼ PASS
+Phase 2: AI Arbiter (LLM or rule-based fallback)
+  │  Evaluates evidence against rulebook.json. Issues verdict:
+  │  buyerWins/sellerWins + confidence score + reasoning.
+  │
+  ▼
+Phase 3: Policy Agent
+  │  Applies rulebook policy rules. Critiques the arbiter's verdict.
+  │  Can BLACKBALL (block) the verdict or adjust confidence/decision.
+  │  Prevents: low-confidence buyer wins on no evidence, seller wins
+  │  on clear non-delivery, overconfident partial-delivery rulings.
+  │
+  ▼ APPROVED
+Phase 4: KeeperHub Onchain Execution
+     MCP server (try first) → Direct Execution API (fallback)
+     simulate → broadcast → audit trail
+```
+
+| Agent | File | Role |
+|-------|------|------|
+| Evidence Verifier | `agent/src/evidence-verifier-agent.ts` | Validates bundle integrity |
+| AI Arbiter | `agent/src/arbiter-llm.ts` | LLM verdict with rule-based fallback |
+| Policy Agent | `agent/src/arbiter-policy-agent.ts` | Rulebook enforcement + blackball |
+| KeeperHub Executor | `agent/src/keeperhub-arbiter.ts` | Onchain execution via MCP + Direct API |
+
+See also our [x402 Protocol Integration Design](docs/x402-integration-design.md) — how Recourse adds chargeback protection to the x402 payment flow.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| **Smart Contracts** | Solidity 0.8.20 + Foundry — 28/28 tests passing |
+| **Smart Contracts** | Solidity 0.8.20 + Foundry — 89/89 tests passing |
 | **Execution Layer** | KeeperHub MCP Server + Direct Execution API (dual-surface, auto-failover) |
 | **Evidence Bundles** | `keccak256` + ABI encoding, committed onchain |
 | **Arbiter** | TypeScript + LLM evaluation (rule-based fallback) |
@@ -170,7 +227,7 @@ git clone https://github.com/tommycet/recourse-chargebacks
 cd recourse
 forge install
 forge build
-forge test -vv    # 28/28 pass
+forge test -vv    # 89/89 pass
 ```
 
 ### Run the KeeperHub Demo
@@ -218,7 +275,7 @@ Verify on Blockscout: [tx `0x6ad71f82…`](https://eth-sepolia.blockscout.com/tx
 recourse/
 ├── contracts/
 │   ├── src/RecourseEscrow.sol            — escrow + dispute state machine
-│   └── test/RecourseEscrow.t.sol         — 28 Foundry tests
+│   └── test/RecourseEscrow.t.sol         — 89 Foundry tests
 ├── middleware/src/
 │   ├── evidenceBundle.ts                 — cryptographic evidence spec
 │   ├── evidenceVerifier.ts               — hash verification

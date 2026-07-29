@@ -374,6 +374,92 @@
     .audit-sim { flex-direction:column; align-items:stretch; gap:8px; }
     .audit-sim-arrow { transform:rotate(90deg); margin:0 auto; }
   }
+
+  /* ── Multi-Agent Pipeline Visualization ── */
+  .pipeline-panel { margin-bottom:20px; }
+  .pipeline-phases {
+    display:flex; align-items:flex-start; gap:0;
+    flex-wrap:wrap; margin-top:8px;
+  }
+  .pipeline-phase {
+    flex:1; min-width:140px;
+    display:flex; flex-direction:column; gap:8px;
+    padding:14px 16px;
+    background:var(--glass); border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    position:relative; transition:all 0.25s;
+  }
+  .pipeline-step-num {
+    font-family:var(--mono); font-size:10px; font-weight:700;
+    color:var(--ink3); letter-spacing:1px;
+  }
+  .pipeline-step-name {
+    font-size:13px; font-weight:600; color:var(--ink2);
+  }
+  .pipeline-step-role {
+    font-family:var(--mono); font-size:10px; color:var(--ink3);
+    line-height:1.5;
+  }
+  .pipeline-step-detail {
+    font-family:var(--mono); font-size:10px; color:var(--ink3);
+    line-height:1.5; margin-top:4px;
+    min-height:28px;
+  }
+  .pipeline-status {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border-radius:50%;
+    font-size:12px; font-weight:700; flex-shrink:0;
+    border:1px solid var(--border2); color:var(--ink3);
+    background:var(--glass); transition:all 0.3s;
+  }
+  .pipeline-phase.p-phase-pending .pipeline-status { content:'○'; }
+  .pipeline-phase.p-phase-active {
+    border-color:var(--accent);
+    background:var(--accent-glow);
+  }
+  .pipeline-phase.p-phase-active .pipeline-step-name { color:var(--ink); }
+  .pipeline-phase.p-phase-active .pipeline-status {
+    background:var(--accent); color:#fff; border-color:var(--accent);
+    animation:phasePulse 1.2s ease-in-out infinite;
+  }
+  @keyframes phasePulse {
+    0%,100% { box-shadow:0 0 0 0 rgba(200,78,20,0.4); }
+    50%     { box-shadow:0 0 0 6px rgba(200,78,20,0); }
+  }
+  .pipeline-phase.p-phase-pass {
+    border-color:rgba(74,158,92,0.3);
+  }
+  .pipeline-phase.p-phase-pass .pipeline-step-name { color:var(--green); }
+  .pipeline-phase.p-phase-pass .pipeline-status {
+    background:var(--green-bg); color:var(--green);
+    border-color:rgba(74,158,92,0.3);
+  }
+  .pipeline-phase.p-phase-fail {
+    border-color:rgba(200,78,78,0.3);
+  }
+  .pipeline-phase.p-phase-fail .pipeline-step-name { color:var(--red); }
+  .pipeline-phase.p-phase-fail .pipeline-status {
+    background:var(--red-bg); color:var(--red);
+    border-color:rgba(200,78,78,0.3);
+  }
+  .pipeline-connector {
+    display:flex; align-items:center; justify-content:center;
+    width:28px; flex-shrink:0; color:var(--ink3); font-size:14px;
+    padding-top:22px;
+  }
+  .pipeline-phase-header { display:flex; align-items:center; gap:10px; }
+  .pipeline-subtitle {
+    font-size:11px; color:var(--ink3); margin-top:2px;
+    font-family:var(--mono);
+  }
+  @media (max-width:1024px) {
+    .pipeline-phases { flex-direction:column; align-items:stretch; gap:8px; }
+    .pipeline-connector {
+      width:100%; padding:4px 0 8px;
+      transform:rotate(90deg); height:16px;
+    }
+    .pipeline-phase { min-width:0; }
+  }
 </style>
 </head>
 <body>

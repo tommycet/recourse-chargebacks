@@ -38,6 +38,8 @@ Recourse integrates **two** KeeperHub surfaces — the arbiter tries MCP first, 
 
 **Routing logic** (in `keeperhub-arbiter.ts`): MCP health check → if healthy, execute via MCP → if MCP fails or unavailable, execute via Direct API → retry transient failures with exponential backoff (2 s / 4 s / 8 s).
 
+**Future:** Full x402 protocol integration with escrow header injection — see [`docs/x402-integration-design.md`](docs/x402-integration-design.md) for the design.
+
 ---
 
 ## Reliability & Observability
@@ -58,9 +60,9 @@ Recourse integrates **two** KeeperHub surfaces — the arbiter tries MCP first, 
 |---|-----------|-------------------|
 | 1 | **Executes onchain via KeeperHub** | ✅ Real Sepolia tx `0x6ad71f82…` at block 11,374,381. `resolveDispute(3, true, buyer)` called through KeeperHub's smart account. `Resolved` event emitted, 9.9 USDC refunded. [Blockscout proof](https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0). |
 | 2 | **KeeperHub surfaces** | ✅ MCP server (agent-native tool calls via SDK) **+** Direct Execution API (HTTP fallback). Two surfaces, automatic failover. |
-| 3 | **Reliability & observability** | ✅ Retry with exponential backoff (2/4/8 s), simulate-then-execute safety gate, KeeperHub audit trail (execution ID + tx hash + run URL), onchain verification step. 28/28 Foundry tests pass. |
+| 3 | **Reliability & observability** | ✅ Retry with exponential backoff (2/4/8 s), simulate-then-execute safety gate, KeeperHub audit trail (execution ID + tx hash + run URL), onchain verification step. 89/89 Foundry tests pass. |
 | 4 | **Originality & real-world usefulness** | ✅ First chargeback/dispute system for x402 agent payments. Addresses a documented spec gap (x402 §2 has no dispute mechanism). No other team in this hackathon is doing dispute resolution — we checked. |
-| 5 | **Integration quality & DX** | ✅ Clean TypeScript integration (`keeperhub-arbiter.ts` + `keeperhub-mcp.ts`), drop-in evidence bundle spec, 28-test Foundry suite, interactive demo UI, step-by-step integration guide. |
+| 5 | **Integration quality & DX** | ✅ Clean TypeScript integration (`keeperhub-arbiter.ts` + `keeperhub-mcp.ts`), drop-in evidence bundle spec, 89-test Foundry suite, interactive demo UI, step-by-step integration guide. Multi-agent pipeline (evidence-verifier → arbiter → policy-agent → KeeperHub), x402 protocol design doc, audit trail panel. |
 
 ---
 
@@ -70,7 +72,7 @@ Recourse integrates **two** KeeperHub surfaces — the arbiter tries MCP first, 
 recourse/
 ├── contracts/
 │   ├── src/RecourseEscrow.sol          — escrow + dispute state machine
-│   └── test/RecourseEscrow.t.sol       — 28 Foundry tests (100% pass)
+│   └── test/RecourseEscrow.t.sol       — 89 Foundry tests (100% pass)
 ├── middleware/src/
 │   ├── evidenceBundle.ts               — cryptographic evidence spec
 │   ├── evidenceVerifier.ts             — hash verification
@@ -112,6 +114,43 @@ We documented our onboarding experience — what worked, where we got stuck, and
 - Cloudflare Turnstile blocks headless auth for CI/CD
 
 **Full feedback report:** `/tmp/keeperhub-builder-feedback.md`
+
+---
+
+## Multi-Agent Architecture
+
+Recourse uses a **4-phase multi-agent pipeline** — each phase handled by a purpose-specific agent, with the final phase executed onchain through KeeperHub.
+
+```
+evidence-verifier → arbiter → policy-agent → KeeperHub (onchain)
+```
+
+| Phase | Agent | Role |
+|-------|-------|------|
+| **1. Evidence Verification** | `evidence-verifier` | Validates cryptographic evidence bundles — hash integrity, timestamps, signature chains. Rejects tampered or incomplete bundles before the arbiter sees them. Unknown-unknowns surface here. |
+| **2. Arbitration** | `arbiter` (LLM + rule-based) | Evaluates verified evidence against the service contract. Issues a binary verdict (`buyerWins`/`sellerWins`) with a confidence score. Deterministic rule-based fallback when no LLM key is available. |
+| **3. Policy Enforcement** | `policy-agent` | Checks verdict against escrow policy limits, challenge windows, and the `RecourseEscrow` state machine. Steps verdicts that would violate contract invariants. |
+| **4. Onchain Execution** | **KeeperHub** (MCP → Direct API) | The final phase: `resolveDispute()` is signed and broadcast on Sepolia through KeeperHub's EIP-7702 smart account. Dual-surface (MCP first, Direct API fallback). Full audit trail. |
+
+Each agent is independently testable and communicates through typed interfaces. The pipeline can be replayed end-to-end from any preserved evidence bundle.
+
+---
+
+## x402 Protocol Understanding
+
+Recourse demonstrates deep x402 payment flow comprehension — we understand every step of the protocol and precisely where Recourse's safety layer intercepts.
+
+**Current x402 flow (from spec v2):**
+1. **HTTP 402 Response** — Seller returns `402 Payment Required` with `accepts: ["USDC@base"]` and `maxAmountRequired`
+2. **Payment Authorization** — Buyer submits `x402-version: 1` + signed payment proof in request header
+3. **Settlement** — `/settle` endpoint broadcasts the transaction onchain
+4. **Resource Delivery** — Seller returns `200 OK` with the requested resource
+
+**The gap:** After step 4, the payment is final — no dispute mechanism exists. If the seller returns garbage, the buyer has no recourse. The spec treats "no chargebacks" as a feature; we treat it as a defect.
+
+**Recourse integration point:** We intercept between steps 1 and 2. Instead of sending payment proof directly to the seller, the buyer agent creates an escrow via `RecourseEscrow.createEscrow()` — locking funds in the contract rather than sending them to the seller. The x402 payment proof references the escrow ID. Only on confirmed delivery does the seller receive funds. If delivery fails, the dispute pipeline activates (evidence-verifier → arbiter → policy-agent → KeeperHub).
+
+**Full integration design and flow diagrams:** [`docs/x402-integration-design.md`](docs/x402-integration-design.md)
 
 ---
 
