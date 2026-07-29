@@ -9,12 +9,34 @@
 
 ## TL;DR
 
-Recourse resolves disputes. KeeperHub executes the resolution onchain. Two integration paths:
+Recourse resolves disputes. KeeperHub executes the resolution onchain. Three integration paths:
 
-1. **Direct Execution API** (fastest to demo) — single `POST /api/execute/contract-call` simulates then broadcasts `resolveDispute()` to Sepolia
-2. **Workflow API** (best for judging "depth of integration") — full webhook → read → condition → write pipeline with audit trail
+1. **MCP server** (agent-native, best for judging) — connect to `https://app.keeperhub.com/mcp`, call `execute_contract_call` tool directly
+2. **Direct Execution API** (fastest to demo) — single `POST /api/execute/contract-call` simulates then broadcasts `resolveDispute()` to Sepolia
+3. **Workflow API** (best for audit trail) — full webhook → read → condition → write pipeline with audit trail
 
 **Winner strategy:** Build both. Direct Execution for the live demo. Workflow for the audit-trail screenshot that judges love.
+
+---
+
+## ⚡ Zero to First Transaction in 5 Steps
+
+**Step 1 — Get a KeeperHub API key:** Sign up at https://app.keeperhub.com, go to Settings > API Keys > Organisation → create a `kh_` key
+
+**Step 2 — Set your env:** `export KEEPERHUB_API_KEY=kh_your_key_here`
+
+**Step 3 — Install deps:** `cd agent/src && npm install`
+
+**Step 4 — Run the demo:** `npx tsx keeperhub-demo.ts` — this simulates evidence, runs the arbiter, and executes `resolveDispute()` on Sepolia via KeeperHub
+
+**Step 5 — Verify your tx:** Check the output for `txHash` and open it on https://eth-sepolia.blockscout.com
+
+### Where We Got Stuck (Builder Feedback)
+
+1. **Cloudflare Turnstile on signup** — browser automation blocked. Solution: manual signup + API key auth for CI.
+2. **txHash was null in response** — KeeperHub doesn't immediately return the tx hash. Solution: poll `GET /api/execute/{id}/status` or check Etherscan.
+3. **Two API key types** — `kh_` for org-level (workflow CRUD, execution), `wfb_` for user-level (webhook triggers). Easy to confuse.
+4. **resolveDispute signature drift** — docs said `bytes32 escrowId`, actual onchain signature is `uint256 id, bool buyerWins, address payoutTo`. Chain is source of truth.
 
 ---
 

@@ -276,6 +276,104 @@
   }
   .step-flow .sf-step.sf-active { color:var(--accent); border-color:var(--accent); background:var(--accent-glow); }
   .step-flow .sf-arrow { color:var(--ink3); font-size:10px; }
+
+  /* ── KeeperHub Audit Trail Panel ── */
+  .audit-trail {
+    margin-top:20px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background:var(--glass);
+    overflow:hidden;
+  }
+  .audit-trail > summary {
+    padding:12px 16px;
+    font-size:13px; font-weight:600; color:var(--ink);
+    cursor:pointer; list-style:none;
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface);
+    border-bottom:1px solid transparent;
+    transition:border-color 0.2s;
+  }
+  .audit-trail[open] > summary { border-bottom-color:var(--border); }
+  .audit-trail > summary::-webkit-details-marker { display:none; }
+  .audit-trail > summary::before {
+    content:'▶'; font-size:9px; color:var(--accent); transition:transform 0.2s;
+  }
+  .audit-trail[open] > summary::before { transform:rotate(90deg); }
+  .audit-badge {
+    font-family:var(--mono); font-size:10px; font-weight:600;
+    padding:2px 8px; border-radius:4px; letter-spacing:0.5px;
+    background:var(--blue-bg); color:var(--blue);
+    border:1px solid rgba(74,126,200,0.2);
+  }
+  .audit-guard {
+    margin-left:auto; font-family:var(--mono); font-size:10px;
+    color:var(--ink3); font-weight:400;
+  }
+  .audit-body { padding:18px 16px; }
+  .audit-empty {
+    text-align:center; padding:20px; color:var(--ink3); font-size:12px;
+  }
+  .audit-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; margin-bottom:16px;
+  }
+  .audit-field { display:flex; flex-direction:column; gap:3px; }
+  .audit-field .af-label {
+    font-size:10px; font-weight:600; text-transform:uppercase;
+    letter-spacing:0.8px; color:var(--ink3);
+  }
+  .audit-field .af-value {
+    font-family:var(--mono); font-size:12px; color:var(--ink);
+    word-break:break-all;
+  }
+  .audit-field .af-value a {
+    color:var(--accent2); text-decoration:none;
+  }
+  .audit-field .af-value a:hover { text-decoration:underline; }
+  .audit-field .af-value .pill {
+    display:inline-block; font-size:10px; padding:1px 6px;
+    border-radius:3px; background:var(--blue-bg); color:var(--blue);
+    border:1px solid rgba(74,126,200,0.15);
+  }
+  .audit-sim {
+    display:flex; align-items:center; gap:0; margin:16px 0;
+    flex-wrap:wrap;
+  }
+  .audit-sim-step {
+    display:flex; align-items:center; gap:8px;
+    padding:10px 16px; border-radius:var(--radius-sm);
+    background:var(--glass); border:1px solid var(--border);
+    font-size:12px;
+  }
+  .audit-sim-step .sim-check {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--green-bg); color:var(--green);
+    border:1px solid rgba(74,158,92,0.3);
+    font-size:11px; font-weight:700;
+  }
+  .audit-sim-step .sim-label {
+    font-family:var(--mono); font-size:11px; color:var(--ink2);
+  }
+  .audit-sim-step .sim-label strong { color:var(--ink); }
+  .audit-sim-arrow {
+    margin:0 8px; color:var(--ink3); font-size:12px;
+  }
+  .audit-meta {
+    display:flex; gap:16px; flex-wrap:wrap;
+    padding-top:12px; border-top:1px solid var(--border);
+    font-size:11px;
+  }
+  .audit-meta-item { color:var(--ink3); }
+  .audit-meta-item strong {
+    color:var(--ink2); font-family:var(--mono); font-weight:500;
+  }
+  .audit-meta-item .ok { color:var(--green); }
+  @media (max-width:640px) {
+    .audit-grid { grid-template-columns:1fr; }
+    .audit-sim { flex-direction:column; align-items:stretch; gap:8px; }
+    .audit-sim-arrow { transform:rotate(90deg); margin:0 auto; }
+  }
 </style>
 </head>
 <body>
@@ -439,6 +537,19 @@
           </div>
         </div>
       </div>
+    </div>
+
+      <!-- KeeperHub Audit Trail Panel -->
+      <details class="audit-trail fade-in" id="auditTrail" style="display:none">
+        <summary>
+          <span>KeeperHub Execution Audit Trail</span>
+          <span class="audit-badge" id="auditStatus">—</span>
+          <span class="audit-guard" id="auditGuard">Simulate → Execute</span>
+        </summary>
+        <div class="audit-body" id="auditBody">
+          <div class="audit-empty">No execution recorded yet. Resolve a dispute via the arbiter to populate.</div>
+        </div>
+      </details>
     </div>
   </main>
 
