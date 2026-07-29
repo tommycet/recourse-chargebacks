@@ -164,7 +164,7 @@ async function demo() {
   if (result.error) console.log(`  Error:      ${result.error}`);
   console.log("═══════════════════════════════════════════════════════════════\n");
 
-  // Save output for submission
+  // Save output for submission — includes full 4-phase pipeline trace
   const output = {
     timestamp: new Date().toISOString(),
     project: "Recourse",
@@ -179,6 +179,41 @@ async function demo() {
       deliveryStatus: input.deliveryStatus,
       requestHash: input.requestHash,
       responseHash: input.responseHash,
+    },
+    pipeline: {
+      phase1: {
+        name: "Evidence Verification",
+        agent: "evidence-verifier",
+        passed: evidenceReport.passed,
+        checks: evidenceReport.checks,
+        summary: evidenceReport.summary,
+      },
+      phase2: {
+        name: "AI Arbiter",
+        agent: "arbiter-llm",
+        verdict: result.verdict,
+        confidence: result.verdict.confidence,
+        reasoning: result.verdict.reasoning,
+        source: result.verdict.source ?? "arbiter-llm",
+      },
+      phase3: {
+        name: "Policy Review",
+        agent: "arbiter-policy",
+        blackballed: policyReview.blackballed,
+        allowed: policyReview.allowed,
+        ruleApplied: policyReview.ruleApplied,
+        critique: policyReview.critique,
+        adjustments: policyReview.adjustments,
+      },
+      phase4: {
+        name: "KeeperHub Execution",
+        agent: "keeperhub",
+        status: result.status,
+        txHash: result.txHash,
+        keeperHubExecutionId: result.keeperHubExecutionId,
+        keeperHubAuditUrl: result.keeperHubAuditUrl,
+        error: result.error ?? null,
+      },
     },
     verdict: result.verdict,
     execution: {
