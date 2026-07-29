@@ -106,9 +106,9 @@ export interface MockTxReceipt {
 
 export function executeRefundViaKeeperHub(escrowId: number, buyerAddress: string): MockTxReceipt {
   // In the real demo flow: this calls KeeperHub's MCP `execute_workflow` which triggers
-  // a `web3/write-contract` action targeting RecourseEscrow.resolveDispute() on Base (8453).
-  // The actual KeeperHub call uses the agentic wallet (Turnkey sub-org, HMAC secret in ~/.keeperhub/wallet.json)
-  // and settles USDC on Base via x402 (EIP-3009 TransferWithAuthorization) with gas sponsorship.
+  // a `web3/write-contract` action targeting RecourseEscrow.resolveDispute() on Sepolia (11155111).
+  // The actual KeeperHub call uses the agentic wallet (EIP-7702 smart account at 0x32db...b4AF)
+  // and settles USDC on Sepolia via the KeeperHub Direct Execution API with gas handled by KeeperHub.
   // For the demo script we emit the intended call + a simulated receipt.
   const txHash = `0xdead${escrowId.toString(16).padStart(12, "0")}${Buffer.from(buyerAddress.slice(2)).toString("hex").slice(0, 8)}`;
   console.log(`[Recourse Arbiter] CALLING keeperhub: write-contract RecourseEscrow.resolveDispute(${escrowId}, true, ${buyerAddress})`);
