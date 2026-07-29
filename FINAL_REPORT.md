@@ -81,6 +81,6 @@ Rule-based fallback works correctly (OpenRouter requires auth key for LLM path).
 
 1. **OpenRouter auth** — arbiter-llm.ts falls back to rule-based without an API key. Add `OPENROUTER_API_KEY` env var to enable LLM-powered analysis.
 2. **Forge lint** — 1 informational ERC20 warning, not a failure.
-3. **Contract not redeployed** — source updated with forceResolve/fees but Sepolia deployment is the original bytecode. Redeploy if demo needs new features on-chain.
+**Note:** The Sepolia deployment predates the `forceResolve`/`DISPUTE_EXPIRY`/`FEE_BPS` additions in the source. The deployed contract has: `createEscrow`, `confirmDelivery`, `raiseDispute`, `resolveDispute`, `autoRefund`, `setArbiter`, `statusOf`, `escrows`, `TIMEOUT`, `USDC`, `arbiter`, `owner`, `nextId`. The `demo/abi.json` correctly matches the deployed bytecode. Source includes `forceResolve` as a future upgrade path.
 
 ## FINAL VERIFICATION DONE
