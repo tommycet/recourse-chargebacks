@@ -96,6 +96,54 @@ contract ReentrancyAttacker {
 }
 
 // ---------------------------------------------------------------------------
+// Malicious ERC20 — invokes a callback on the recipient during transfer,
+// simulating ERC777-style reentrancy. Used for reentrancy attack tests.
+// ---------------------------------------------------------------------------
+contract MaliciousERC20 is MockUSDC {
+    RecourseEscrow public target;
+    uint256 public attackEscrowId;
+    bool public attackMode;
+    address public attackTo;
+
+    constructor(RecourseEscrow _target) {
+        target = _target;
+    }
+
+    function setAttack(uint256 _escrowId, bool _mode) external {
+        attackEscrowId = _escrowId;
+        attackMode = _mode;
+    }
+
+    function setAttackTo(address _to) external {
+        attackTo = _to;
+    }
+
+    function transfer(address to, uint256 amount) external override returns (bool) {
+        require(balanceOf[msg.sender] >= amount, "insufficient");
+        balanceOf[msg.sender] -= amount;
+        balanceOf[to] += amount;
+        // Reentrancy: during the escrow's resolveDispute transfer to payout,
+        // re-enter resolveDispute before the `resolved = true` flag would prevent it.
+        // Contract uses Checks-Effects-Interactions: e.resolved = true BEFORE transfer.
+        if (attackMode && to != msg.sender) {
+            attackMode = false; // one-shot
+            try target.resolveDispute(attackEscrowId, true, attackTo) {} catch {}
+            try target.autoRefund(attackEscrowId) {} catch {}
+        }
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) external override returns (bool) {
+        require(balanceOf[from] >= amount, "insufficient");
+        require(allowance[from][msg.sender] >= amount, "allowance");
+        balanceOf[from] -= amount;
+        balanceOf[to] += amount;
+        allowance[from][msg.sender] -= amount;
+        return true;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Test suite for the real RecourseEscrow (with 1% fee, forceResolve, setArbiter)
 // ---------------------------------------------------------------------------
 contract RecourseEscrowTest is Test {
