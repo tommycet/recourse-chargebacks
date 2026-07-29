@@ -60,9 +60,9 @@ Recourse integrates **two** KeeperHub surfaces — the arbiter tries MCP first, 
 |---|-----------|-------------------|
 | 1 | **Executes onchain via KeeperHub** | ✅ Real Sepolia tx `0x6ad71f82…` at block 11,374,381. `resolveDispute(3, true, buyer)` called through KeeperHub's smart account. `Resolved` event emitted, 9.9 USDC refunded. [Blockscout proof](https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0). |
 | 2 | **KeeperHub surfaces** | ✅ MCP server (agent-native tool calls via SDK) **+** Direct Execution API (HTTP fallback). Two surfaces, automatic failover. |
-| 3 | **Reliability & observability** | ✅ Retry with exponential backoff (2/4/8 s), simulate-then-execute safety gate, KeeperHub audit trail (execution ID + tx hash + run URL), onchain verification step. 89/89 Foundry tests pass. |
+| 3 | **Reliability & observability** | ✅ Retry with exponential backoff (2/4/8 s), simulate-then-execute safety gate, KeeperHub audit trail (execution ID + tx hash + run URL), onchain verification step. 137/137 Foundry tests pass. |
 | 4 | **Originality & real-world usefulness** | ✅ First chargeback/dispute system for x402 agent payments. Addresses a documented spec gap (x402 §2 has no dispute mechanism). No other team in this hackathon is doing dispute resolution — we checked. |
-| 5 | **Integration quality & DX** | ✅ Clean TypeScript integration (`keeperhub-arbiter.ts` + `keeperhub-mcp.ts`), drop-in evidence bundle spec, 89-test Foundry suite, interactive demo UI, step-by-step integration guide. Multi-agent pipeline (evidence-verifier → arbiter → policy-agent → KeeperHub), x402 protocol design doc, audit trail panel. |
+| 5 | **Integration quality & DX** | ✅ Clean TypeScript integration (`keeperhub-arbiter.ts` + `keeperhub-mcp.ts`), drop-in evidence bundle spec, 137-test Foundry suite, interactive demo UI, step-by-step integration guide. Multi-agent pipeline (evidence-verifier → arbiter → policy-agent → KeeperHub), x402 protocol design doc, audit trail panel. |
 
 ---
 
@@ -72,7 +72,7 @@ Recourse integrates **two** KeeperHub surfaces — the arbiter tries MCP first, 
 recourse/
 ├── contracts/
 │   ├── src/RecourseEscrow.sol          — escrow + dispute state machine
-│   └── test/RecourseEscrow.t.sol       — 89 Foundry tests (100% pass)
+│   └── test/RecourseEscrow.t.sol       — 137 Foundry tests (100% pass)
 ├── middleware/src/
 │   ├── evidenceBundle.ts               — cryptographic evidence spec
 │   ├── evidenceVerifier.ts             — hash verification
