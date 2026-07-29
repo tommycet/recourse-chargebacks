@@ -65,7 +65,7 @@ async function demo() {
   console.log("\n═══════════════════════════════════════════════════════════════");
   console.log("  FINAL RESULT");
   console.log("═══════════════════════════════════════════════════════════════");
-  console.log(`  Verdict:    ${result.verdict.buyerWins ? "✅ BUYER WINS (refund)" : "❌ SELLER WINS (payout)"}`);
+  console.log(`  Verdict:    ${result.verdict.buyerWins ? "✅ BUYER WINS (refund)" : "❌ SELLER WINS (payout)"} [${result.verdict.source}]`);
   console.log(`  Confidence: ${(result.verdict.confidence * 100).toFixed(0)}%`);
   console.log(`  Reasoning:  ${result.verdict.reasoning}`);
   console.log(`  TX Hash:    ${result.txHash ?? "N/A (no API key)"}`);

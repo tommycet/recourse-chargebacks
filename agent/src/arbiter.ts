@@ -27,15 +27,19 @@ export interface Tier0Result {
 }
 
 export function tier0AutoVerify(bundle: EvidenceBundle): Tier0Result {
-  // 1. Objective: txHash must exist (we assume an offchain index verifies Base chain presence in production; here we check format)
-  if (!bundle.txHash || bundle.txHash.length !== 66) {
+  // 0. Guard: missing/empty digests → hold (prevents seller auto-win on missing proof)
+  if (!bundle.contentDigest || !bundle.requestDigest) {
+    return { ok: false, reason: "digest missing — insufficient evidence to auto-verify", settlement: "hold" };
+  }
+  // 1. Objective: txHash must exist (66-char hex)
+  if (!bundle.txHash || bundle.txHash.length !== 66 || !/^0x[0-9a-fA-F]{64}$/.test(bundle.txHash)) {
     return { ok: false, reason: "txHash missing or malformed (expected 66-char hex)", settlement: "hold" };
   }
-  // 2. ContentDigest must match: if responseDigest === requestDigest → delivery matches commitment → release
+  // 2. ContentDigest must match: if contentDigest === requestDigest → delivery verified → release
   if (bundle.contentDigest === bundle.requestDigest) {
     return { ok: true, reason: "contentDigest matches requestDigest (delivery verified); txHash present.", settlement: "release" };
   }
-  // 3. ContentDigest mismatch → buyer wins (refund) as per Tier-1 rulebook
+  // 3. ContentDigest mismatch → buyer wins (refund) per Tier-1 rulebook
   return { ok: false, reason: "contentDigest MISMATCH — service delivery does not match buyer's committed spec. Buyer wins per rulebook.", settlement: "refund" };
 }
 
@@ -53,13 +57,12 @@ export interface Tier1Result {
 export function tier1Arbiter(bundle: EvidenceBundle): Tier1Result {
   // Read public rulebook (published, deterministic — no hidden weights)
   const rulebookPath = path.join(__dirname, "rulebook.json");
-  let rulesText = "public rulebook unavailable";
+  let rules: { version?: string };
   try {
-    rulesText = fs.readFileSync(rulebookPath, "utf-8");
+    rules = JSON.parse(fs.readFileSync(rulebookPath, "utf-8"));
   } catch (_) {
-    // fall through — demo-safe
+    return { winner: "tie", feePaidBy: "buyer", confidence: 0, explanation: "Rulebook unavailable — escalate to Tier-2 (human appeal)." };
   }
-  const rules = JSON.parse(rulesText);
 
   const contentDigestMatches = bundle.contentDigest === bundle.requestDigest;
   const txPresent = bundle.txHash && bundle.txHash.length === 66;
@@ -109,7 +112,7 @@ export function executeRefundViaKeeperHub(escrowId: number, buyerAddress: string
   // For the demo script we emit the intended call + a simulated receipt.
   const txHash = `0xdead${escrowId.toString(16).padStart(12, "0")}${Buffer.from(buyerAddress.slice(2)).toString("hex").slice(0, 8)}`;
   console.log(`[Recourse Arbiter] CALLING keeperhub: write-contract RecourseEscrow.resolveDispute(${escrowId}, true, ${buyerAddress})`);
-  console.log(`[Recourse Arbiter] Network: Base (8453) | Contract: RecourseEscrow (hardcoded USDC 0x8335...) | Wallet: turn-key sub-org via KeeperHub`);
+  console.log(`[Recourse Arbiter] Network: Sepolia (11155111) | Contract: RecourseEscrow (0x8c0c...35a2) | Wallet: KeeperHub agentic wallet`);
   return { txHash, gasUsed: 48210, status: 1, blockNumber: 102030405 + escrowId };
 }
 

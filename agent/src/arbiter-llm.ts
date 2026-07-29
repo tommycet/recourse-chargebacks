@@ -23,12 +23,13 @@ export interface EscrowContext {
 
 export interface Verdict {
   buyerWins: boolean;
-  confidence: number;
+  confidence: number; // 0..1
   reasoning: string;
+  source: "llm" | "fallback";
 }
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "deepseek/deepseek-chat";
+const MODEL = process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat";
 
 export async function analyzeDispute(
   bundle: SimpleBundle,
@@ -67,36 +68,43 @@ export async function analyzeDispute(
     },
   ];
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error("OPENROUTER_API_KEY not set");
+    }
 
     const res = await fetch(OPENROUTER_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({ model: MODEL, messages: prompt, max_tokens: 200 }),
       signal: controller.signal,
     });
 
-    clearTimeout(timeout);
-
     if (!res.ok) {
-      throw new Error(`OpenRouter returned ${res.status}`);
+      const body = await res.text().catch(() => "");
+      throw new Error(`OpenRouter returned ${res.status}: ${body.slice(0, 200)}`);
     }
 
     const data = await res.json();
     const text = data?.choices?.[0]?.message?.content ?? "";
 
-    // Extract JSON from the response
-    const jsonMatch = text.match(/\{[^}]+\}/);
+    // Robust JSON extraction: strip code fences, greedy brace match
+    const cleaned = text.replace(/```(?:json)?\s*/g, "").trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       return {
         buyerWins: Boolean(parsed.buyerWins),
-        confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.8,
+        confidence: Math.min(1, Math.max(0, typeof parsed.confidence === "number" ? parsed.confidence : 0.8)),
         reasoning: parsed.reasoning || "LLM analysis complete",
+        source: "llm",
       };
     }
 
@@ -105,10 +113,14 @@ export async function analyzeDispute(
     // Rule-based fallback
     const buyerWins =
       bundle.deliveryStatus === "failed" || bundle.deliveryStatus === "none";
+    const errMsg = err instanceof Error ? err.message : (err as any)?.name || "unknown";
     return {
       buyerWins,
-      confidence: 0.9,
-      reasoning: `Rule-based fallback (LLM unavailable: ${err instanceof Error ? err.message : "unknown"}): deliveryStatus=${bundle.deliveryStatus} → ${buyerWins ? "buyer wins (refund)" : "seller wins (payout)"}`,
+      confidence: 0.5,
+      reasoning: `Rule-based fallback (LLM unavailable: ${errMsg}): deliveryStatus=${bundle.deliveryStatus} → ${buyerWins ? "buyer wins (refund)" : "seller wins (payout)"}`,
+      source: "fallback",
     };
+  } finally {
+    clearTimeout(timeout);
   }
 }

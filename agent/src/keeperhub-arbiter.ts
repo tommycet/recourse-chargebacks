@@ -36,7 +36,7 @@ export interface DisputeInput {
 }
 
 export interface ArbiterResult {
-  verdict: { buyerWins: boolean; confidence: number; reasoning: string };
+  verdict: { buyerWins: boolean; confidence: number; reasoning: string; source?: string };
   txHash: string | null;
   keeperHubExecutionId: string | null;
   keeperHubWorkflowId: string | null;
