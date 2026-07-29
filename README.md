@@ -3,7 +3,7 @@
 **The dispute-resolution and escrow layer for autonomous x402 agent payments. AI arbiter decides → KeeperHub executes onchain.**
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?logo=solidity)](https://soliditylang.org)
-[![Foundry](https://img.shields.io/badge/Foundry-89%2F89%20tests-orange)](https://book.getfoundry.sh)
+[![Foundry](https://img.shields.io/badge/Foundry-100%2F100%20tests-orange)](https://book.getfoundry.sh)
 [![Network](https://img.shields.io/badge/Network-Sepolia-blue)](https://sepolia.etherscan.io)
 [![Execution](https://img.shields.io/badge/Execution-KeeperHub-blueviolet)](https://docs.keeperhub.com)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)

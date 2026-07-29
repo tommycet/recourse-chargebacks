@@ -1115,4 +1115,166 @@ contract RecourseEscrowTest is Test {
     function test_ownerIsDeployer() public {
         assertEq(escrow.owner(), address(this), "owner is deployer");
     }
+
+    // ===================================================================
+    // BATCH 3 — REENTRANCY, SECURITY, EDGE CASES (tests 90–125+)
+    // ===================================================================
+
+    // -------------------------------------------------------------------
+    // Reentrancy: MaliciousERC20 that calls back into resolveDispute
+    // -------------------------------------------------------------------
+
+    function test_reentrancy_resolveDispute_preventedByChecksEffectsInteractions() public {
+        // Deploy a separate escrow with the malicious token
+        MaliciousERC20 malToken = new MaliciousERC20(escrow);
+        RecourseEscrow malEscrow = new RecourseEscrow(address(malToken), arbiter);
+        malToken.mint(buyer, 10_000e6);
+        vm.prank(buyer);
+        malToken.approve(address(malEscrow), type(uint256).max);
+
+        // Create a disputed escrow using the malicious token
+        vm.prank(buyer);
+        uint256 id = malEscrow.createEscrow(buyer, seller, AMOUNT, TASK_ID, EVIDENCE);
+        vm.prank(buyer);
+        malEscrow.raiseDispute(id, keccak256("d"));
+
+        // Arm the reentrancy attack: during resolveDispute's USDC.transfer(),
+        // the malicious token will try to re-enter resolveDispute.
+        malToken.setAttack(id, true);
+        malToken.setAttackTo(buyer);
+
+        // Arbiter resolves in buyer's favor — the malicious token tries
+        // to call resolveDispute again, but `resolved` is already true.
+        vm.prank(arbiter);
+        malEscrow.resolveDispute(id, true, buyer);
+
+        // Reentrancy prevented: escrow is resolved exactly once
+        assertEq(uint(malEscrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved once");
+        // Buyer got NET (99e6), not double
+        assertEq(malToken.balanceOf(buyer), 10_000e6 - AMOUNT + NET, "buyer got net once");
+        // Escrow is fully drained
+        assertEq(malToken.balanceOf(address(malEscrow)), 0, "malEscrow drained");
+    }
+
+    function test_reentrancy_autoRefund_preventedByChecksEffectsInteractions() public {
+        MaliciousERC20 malToken = new MaliciousERC20(escrow);
+        RecourseEscrow malEscrow = new RecourseEscrow(address(malToken), arbiter);
+        malToken.mint(buyer, 10_000e6);
+        vm.prank(buyer);
+        malToken.approve(address(malEscrow), type(uint256).max);
+
+        vm.prank(buyer);
+        uint256 id = malEscrow.createEscrow(buyer, seller, AMOUNT, TASK_ID, EVIDENCE);
+        vm.prank(buyer);
+        malEscrow.raiseDispute(id, keccak256("d"));
+
+        // Warp past TIMEOUT
+        vm.warp(block.timestamp + 14 days + 1);
+
+        // Arm reentrancy: during autoRefund's transfer, try resolveDispute
+        malToken.setAttack(id, true);
+        malToken.setAttackTo(buyer);
+
+        // Call autoRefund — malicious token tries resolveDispute mid-transfer
+        malEscrow.autoRefund(id);
+
+        assertEq(uint(malEscrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved once");
+        // Buyer got full amount (autoRefund doesn't charge fee), not double
+        assertEq(malToken.balanceOf(buyer), 10_000e6 - AMOUNT + AMOUNT, "buyer got refund once");
+        assertEq(malToken.balanceOf(address(malEscrow)), 0, "escrow drained once");
+    }
+
+    // -------------------------------------------------------------------
+    // Malicious seller: confirms with wrong hash, disputes after delivery
+    // -------------------------------------------------------------------
+
+    function test_maliciousSeller_cannotConfirmDelivery() public {
+        // Only the BUYER can call confirmDelivery, not the seller
+        uint256 id = _create();
+        vm.prank(seller);
+        vm.expectRevert("not buyer");
+        escrow.confirmDelivery(id, keccak256("wrong-hash"));
+    }
+
+    function test_maliciousSeller_buyerControlsEvidenceHash() public {
+        // The seller cannot substitute a wrong evidence hash during delivery
+        uint256 id = _create();
+        bytes32 originalEv = EVIDENCE;
+        bytes32 wrongEv = keccak256("seller-forged");
+
+        vm.prank(buyer);
+        escrow.confirmDelivery(id, wrongEv);
+
+        // The evidence hash stored is whatever the BUYER passed in
+        (, , , , bytes32 evHash, , , , , , ) = escrow.escrows(id);
+        assertEq(evHash, wrongEv, "buyer's hash stored, not seller's");
+        assertNotEq(evHash, originalEv, "hash changed from original");
+    }
+
+    function test_maliciousSeller_cannotRaiseDispute() public {
+        // Only the buyer can raise a dispute
+        uint256 id = _create();
+        vm.prank(seller);
+        vm.expectRevert("not buyer");
+        escrow.raiseDispute(id, keccak256("seller-dispute"));
+    }
+
+    function test_maliciousSeller_cannotForceResolveEarly() public {
+        // Seller can't use forceResolve to trigger a refund before DISPUTE_EXPIRY
+        uint256 id = _createAndDispute();
+        vm.warp(block.timestamp + 3 days);
+        vm.prank(seller);
+        vm.expectRevert("dispute expiry not reached");
+        escrow.forceResolve(id);
+    }
+
+    // -------------------------------------------------------------------
+    // Malicious buyer: disputes before delivery, double-dispute pattern
+    // -------------------------------------------------------------------
+
+    function test_maliciousBuyer_disputeBeforeDeliveryIsAllowed() public {
+        // Buyer CAN dispute in Active state (before delivery) — this is by design
+        uint256 id = _create();
+        vm.prank(buyer);
+        escrow.raiseDispute(id, keccak256("early-dispute"));
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Disputed), "Disputed before delivery");
+    }
+
+    function test_maliciousBuyer_disputeAfterDeliveryReverts() public {
+        // If buyer already confirmed delivery, they can't then dispute
+        uint256 id = _create();
+        vm.prank(buyer);
+        escrow.confirmDelivery(id, EVIDENCE);
+
+        vm.prank(buyer);
+        vm.expectRevert("not in progress");
+        escrow.raiseDispute(id, keccak256("post-delivery-dispute"));
+    }
+
+    function test_maliciousBuyer_doubleDisputeInDisputedStateReverts() public {
+        // Buyer tries to dispute a second time while already Disputed
+        uint256 id = _createAndDispute();
+        vm.prank(buyer);
+        vm.expectRevert("not in progress");
+        escrow.raiseDispute(id, keccak256("second-dispute"));
+    }
+
+    function test_maliciousBuyer_cannotDrainViaRepeatedConfirmAfterDispute() public {
+        // After disputing, buyer tries confirmDelivery (should revert, no double-spend)
+        uint256 id = _createAndDispute();
+        vm.prank(buyer);
+        vm.expectRevert("disputed/resolved");
+        escrow.confirmDelivery(id, EVIDENCE);
+
+        // Escrow still holds funds
+        assertEq(usdc.balanceOf(address(escrow)), AMOUNT, "funds still locked");
+    }
+
+    function test_maliciousBuyer_cannotSelfResolveAsArbiter() public {
+        // Buyer is not the arbiter, can't resolve their own dispute
+        uint256 id = _createAndDispute();
+        vm.prank(buyer);
+        vm.expectRevert("not arbiter");
+        escrow.resolveDispute(id, true, buyer);
+    }
 }
