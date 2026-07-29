@@ -112,15 +112,55 @@ async function demo() {
   const result = await runKeeperHubArbiter(input);
 
   console.log("\n═══════════════════════════════════════════════════════════════");
-  console.log("  FINAL RESULT");
+  console.log("  FINAL RESULT — 4-Phase Multi-Agent Pipeline Summary");
   console.log("═══════════════════════════════════════════════════════════════");
-  console.log(`  Verdict:    ${result.verdict.buyerWins ? "✅ BUYER WINS (refund)" : "❌ SELLER WINS (payout)"} [${result.verdict.source}]`);
+
+  // Phase 1: Evidence Verification
+  console.log("\n╔══════════════════════════════════════════════════════════════╗");
+  console.log("║  Phase 1: Evidence Verification (Agent 1)                  ║");
+  console.log("╚══════════════════════════════════════════════════════════════╝");
+  const p1 = result.pipeline?.phase1;
+  if (p1?.checks) {
+    for (const check of p1.checks) {
+      console.log(`  ${check.passed ? "✅" : "❌"} ${check.name}: ${check.detail}`);
+    }
+  }
+  console.log(`  Verdict: ${evidenceReport.passed ? "✅ PASS" : "❌ FAIL"} — ${evidenceReport.summary}`);
+
+  // Phase 2: AI Arbiter
+  console.log("\n╔══════════════════════════════════════════════════════════════╗");
+  console.log("║  Phase 2: AI Arbiter (Agent 2)                             ║");
+  console.log("╚══════════════════════════════════════════════════════════════╝");
+  console.log(`  Decision:  ${result.verdict.buyerWins ? "✅ BUYER WINS (refund)" : "❌ SELLER WINS (payout)"}`);
+  console.log(`  Source:    ${result.verdict.source ?? "arbiter-llm"}`);
   console.log(`  Confidence: ${(result.verdict.confidence * 100).toFixed(0)}%`);
   console.log(`  Reasoning:  ${result.verdict.reasoning}`);
+
+  // Phase 3: Policy Review
+  const policyReview: PolicyReview = reviewArbiterDecision(
+    { buyerWins: result.verdict.buyerWins, confidence: result.verdict.confidence, reasoning: result.verdict.reasoning },
+    input.deliveryStatus,
+  );
+  console.log("\n╔══════════════════════════════════════════════════════════════╗");
+  console.log("║  Phase 3: Policy Review (Agent 3)                          ║");
+  console.log("╚══════════════════════════════════════════════════════════════╝");
+  console.log(`  Blackball:  ${policyReview.blackballed ? "🚫 YES — verdict blocked" : "✅ NO — verdict passes"}`);
+  console.log(`  Rule:       ${policyReview.ruleApplied}`);
+  console.log(`  Critique:   ${policyReview.critique}`);
+  if (policyReview.adjustments.length > 0) {
+    for (const adj of policyReview.adjustments) {
+      console.log(`  Adjustment: ${adj.field} ${adj.from} → ${adj.to}`);
+    }
+  }
+
+  // Phase 4: KeeperHub Execution
+  console.log("\n╔══════════════════════════════════════════════════════════════╗");
+  console.log("║  Phase 4: KeeperHub Execution (Agent 4)                    ║");
+  console.log("╚══════════════════════════════════════════════════════════════╝");
+  console.log(`  Status:     ${result.status}`);
   console.log(`  TX Hash:    ${result.txHash ?? "N/A (no API key)"}`);
   console.log(`  Exec ID:    ${result.keeperHubExecutionId ?? "N/A"}`);
   console.log(`  Audit URL:  ${result.keeperHubAuditUrl ?? "N/A"}`);
-  console.log(`  Status:     ${result.status}`);
   if (result.error) console.log(`  Error:      ${result.error}`);
   console.log("═══════════════════════════════════════════════════════════════\n");
 
