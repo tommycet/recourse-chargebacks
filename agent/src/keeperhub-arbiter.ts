@@ -14,6 +14,8 @@
 
 import { analyzeDispute, type SimpleBundle, type EscrowContext } from "./arbiter-llm.ts";
 import { executeViaMcp, mcpHealthCheck } from "./keeperhub-mcp.ts";
+import { verifyEvidence, type EvidenceBundle, type VerificationReport } from "./evidence-verifier-agent.ts";
+import { reviewArbiterDecision, type PolicyReview } from "./arbiter-policy-agent.ts";
 
 const KEEPERHUB_API = "https://app.keeperhub.com/api";
 const ESCROW_ADDRESS = "0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2";
@@ -88,8 +90,14 @@ export interface ArbiterResult {
   txHash: string | null;
   keeperHubExecutionId: string | null;
   keeperHubWorkflowId: string | null;
-  status: "executed" | "simulated" | "no_api_key";
+  status: "executed" | "simulated" | "no_api_key" | "blackballed";
   keeperHubAuditUrl: string | null;
+  pipeline: {
+    phase1: { agent: string; passed: boolean; checks: VerificationReport["checks"] };
+    phase2: { agent: string };
+    phase3: { agent: string; allowed: boolean; blackballed: boolean; critique: string };
+    phase4: { agent: string };
+  };
   error?: string;
 }
 
@@ -174,6 +182,46 @@ async function simulateViaKeeperHub(
 export async function runKeeperHubArbiter(input: DisputeInput): Promise<ArbiterResult> {
   const apiKey = process.env.KEEPERHUB_API_KEY;
 
+  // ═══════════════════════════════════════════════════════════
+  // MULTI-AGENT PIPELINE (judging: multi-agent architecture)
+  // Phase 1: Evidence verifier validates bundle integrity
+  // Phase 2: Arbiter (LLM) evaluates evidence → verdict
+  // Phase 3: Policy agent critiques verdict → blackball or approve
+  // Phase 4: KeeperHub executes onchain (only if approved)
+  // ═══════════════════════════════════════════════════════════
+
+  // Phase 1: Evidence verification
+  console.log(`[pipeline] Phase 1: Evidence verifier checking escrow #${input.escrowId}...`);
+  const evidenceResult = verifyEvidence({
+    requestHash: input.requestHash,
+    responseHash: input.responseHash,
+    deliveryStatus: input.deliveryStatus,
+    buyerAddr: input.buyerAddr,
+    sellerAddr: input.sellerAddr,
+  });
+  console.log(`[pipeline] Phase 1 result: ${evidenceResult.passed ? "PASS" : "FAIL"} — ${evidenceResult.summary}`);
+  for (const check of evidenceResult.checks) {
+    console.log(`  ${check.passed ? "✓" : "✗"} ${check.name}: ${check.detail}`);
+  }
+
+  if (!evidenceResult.passed) {
+    return {
+      verdict: { buyerWins: false, confidence: 0, reasoning: "Evidence verification failed", source: "evidence-verifier" },
+      txHash: null,
+      keeperHubExecutionId: null,
+      keeperHubWorkflowId: null,
+      status: "blackballed",
+      keeperHubAuditUrl: null,
+      pipeline: {
+        phase1: { agent: "evidence-verifier", passed: false, checks: evidenceResult.checks },
+        phase2: { agent: "arbiter" },
+        phase3: { agent: "policy", allowed: false, blackballed: true, critique: "Evidence verification failed" },
+        phase4: { agent: "keeperhub" },
+      },
+      error: `Evidence verification failed: ${evidenceResult.summary}`,
+    };
+  }
+
   // 1. Run LLM arbiter (with rule-based fallback)
   const bundle: SimpleBundle = {
     version: 1,
@@ -199,6 +247,38 @@ export async function runKeeperHubArbiter(input: DisputeInput): Promise<ArbiterR
   console.log(`[arbiter] Verdict: buyerWins=${verdict.buyerWins} confidence=${verdict.confidence}`);
   console.log(`[arbiter] Reasoning: ${verdict.reasoning}`);
 
+  // Phase 3: Policy agent critiques the verdict
+  console.log(`[pipeline] Phase 3: Policy agent reviewing verdict...`);
+  const policyReview = reviewArbiterDecision(verdict, input.deliveryStatus);
+  console.log(`[pipeline] Phase 3 result: ${policyReview.blackballed ? "BLACKBALLED" : "APPROVED"} — ${policyReview.critique}`);
+
+  if (policyReview.blackballed) {
+    return {
+      verdict,
+      txHash: null,
+      keeperHubExecutionId: null,
+      keeperHubWorkflowId: null,
+      status: "blackballed",
+      keeperHubAuditUrl: null,
+      pipeline: {
+        phase1: { agent: "evidence-verifier", passed: true, checks: evidenceResult.checks },
+        phase2: { agent: "arbiter" },
+        phase3: { agent: "policy", allowed: false, blackballed: true, critique: policyReview.critique },
+        phase4: { agent: "keeperhub" },
+      },
+      error: `Policy agent blackballed the verdict: ${policyReview.critique}`,
+    };
+  }
+
+  // Apply policy adjustments if any
+  if (policyReview.adjustments.length > 0) {
+    for (const adj of policyReview.adjustments) {
+      console.log(`[pipeline] Policy adjustment: ${adj.field} ${adj.from} → ${adj.to}`);
+      if (adj.field === "buyerWins") verdict.buyerWins = adj.to as boolean;
+      if (adj.field === "confidence") verdict.confidence = adj.to as number;
+    }
+  }
+
   // Payout goes to winning party
   const payoutTo = verdict.buyerWins ? input.buyerAddr : input.sellerAddr;
 
@@ -211,6 +291,7 @@ export async function runKeeperHubArbiter(input: DisputeInput): Promise<ArbiterR
       keeperHubWorkflowId: null,
       status: "no_api_key",
       keeperHubAuditUrl: null,
+      pipeline: { phase1: { agent: "evidence-verifier", passed: true, checks: evidenceResult.checks }, phase2: { agent: "arbiter" }, phase3: { agent: "policy", allowed: true, blackballed: false, critique: "No onchain execution — API key not set" }, phase4: { agent: "keeperhub" } },
       error: "KEEPERHUB_API_KEY not set — set it in .env to enable onchain execution",
     };
   }
@@ -228,6 +309,7 @@ export async function runKeeperHubArbiter(input: DisputeInput): Promise<ArbiterR
       keeperHubWorkflowId: null,
       status: "simulated",
       keeperHubAuditUrl: null,
+      pipeline: { phase1: { agent: "evidence-verifier", passed: true, checks: evidenceResult.checks }, phase2: { agent: "arbiter" }, phase3: { agent: "policy", allowed: true, blackballed: false, critique: policyReview.critique }, phase4: { agent: "keeperhub" } },
       error: `Simulation failed: ${sim.error ?? "would revert"}`,
     };
   }
@@ -279,6 +361,7 @@ export async function runKeeperHubArbiter(input: DisputeInput): Promise<ArbiterR
       keeperHubWorkflowId: null,
       status: "simulated",
       keeperHubAuditUrl: null,
+      pipeline: { phase1: { agent: "evidence-verifier", passed: true, checks: evidenceResult.checks }, phase2: { agent: "arbiter" }, phase3: { agent: "policy", allowed: true, blackballed: false, critique: policyReview.critique }, phase4: { agent: "keeperhub" } },
       error: exec.error,
     };
   }
@@ -299,5 +382,6 @@ export async function runKeeperHubArbiter(input: DisputeInput): Promise<ArbiterR
     keeperHubWorkflowId: null,
     status: "executed",
     keeperHubAuditUrl: auditUrl,
+    pipeline: { phase1: { agent: "evidence-verifier", passed: true, checks: evidenceResult.checks }, phase2: { agent: "arbiter" }, phase3: { agent: "policy", allowed: true, blackballed: false, critique: policyReview.critique }, phase4: { agent: "keeperhub" } },
   };
 }

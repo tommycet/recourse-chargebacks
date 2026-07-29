@@ -15,14 +15,14 @@ contract MockUSDC {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
-    function transfer(address to, uint256 amount) external returns (bool) {
+    function transfer(address to, uint256 amount) external virtual returns (bool) {
         require(balanceOf[msg.sender] >= amount, "insufficient");
         balanceOf[msg.sender] -= amount;
         balanceOf[to] += amount;
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
+    function transferFrom(address from, address to, uint256 amount) external virtual returns (bool) {
         require(balanceOf[from] >= amount, "insufficient");
         require(allowance[from][msg.sender] >= amount, "allowance");
         balanceOf[from] -= amount;
@@ -31,7 +31,7 @@ contract MockUSDC {
         return true;
     }
 
-    function approve(address spender, uint256 amount) external returns (bool) {
+    function approve(address spender, uint256 amount) external virtual returns (bool) {
         allowance[msg.sender][spender] = amount;
         return true;
     }
@@ -39,6 +39,59 @@ contract MockUSDC {
     function mint(address to, uint256 amount) external {
         balanceOf[to] += amount;
         totalSupply += amount;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Reverting ERC20 mock — transfer/transferFrom always revert
+// ---------------------------------------------------------------------------
+contract RevertingERC20 is MockUSDC {
+    function transfer(address /*to*/, uint256 /*amount*/) external pure override returns (bool) {
+        revert("USDC: blacklisted");
+    }
+
+    function transferFrom(address /*from*/, address /*to*/, uint256 /*amount*/) external pure override returns (bool) {
+        revert("USDC: blacklisted");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Reentrancy attacker — tries to re-enter autoRefund/resolveDispute via receive
+// ---------------------------------------------------------------------------
+contract ReentrancyAttacker {
+    RecourseEscrow public target;
+    uint256 public attackEscrowId;
+    bool public attackMode;
+    uint256 public reentryCount;
+
+    constructor(RecourseEscrow _target) {
+        target = _target;
+    }
+
+    receive() external payable {
+        if (attackMode && reentryCount < 3) {
+            reentryCount++;
+            try target.autoRefund(attackEscrowId) {} catch {}
+            try target.resolveDispute(attackEscrowId, true, address(this)) {} catch {}
+        }
+    }
+
+    function startAttack(uint256 escrowId) external {
+        // Caller must first set up the reentrant receive() to be called during transfer
+        attackMode = true;
+        reentryCount = 0;
+        attackEscrowId = escrowId;
+    }
+
+    function stopAttack() external {
+        attackMode = false;
+    }
+
+    // Forward USDC back to escrow from receive fallback (won't work because autoRefund
+    // checks alreadyResolved — but it's worth testing that the check holds)
+    function resolveAttack(uint256 escrowId, bool buyerWins) external {
+        // This tries the arbiter path — only works if caller IS arbiter
+        try target.resolveDispute(escrowId, buyerWins, address(this)) {} catch {}
     }
 }
 
