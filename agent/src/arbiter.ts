@@ -1,7 +1,7 @@
 // agent/src/arbiter.ts — Tier-0 auto-verifier + Tier-1 AI arbiter agent
 // Reference: DeepMind "Intelligent AI Delegation" (Tomašev et al., 2026) — delegation + arbitration blueprint.
 // Reference: a16z agent-payments stack analysis (2026): liability problem = "who bears cost when agent-initiated transaction is reversed?"
-// Reference: x402 repo issue #1645: `/settle` has zero delivery verification — evidence bundles fix this.
+// Reference: x402 repo the x402 settlement flow: ``/settle` has zero delivery verification — evidence bundles fix this.
 
 import * as fs from "fs";
 import * as path from "path";
@@ -118,7 +118,7 @@ export function executeRefundViaKeeperHub(escrowId: number, buyerAddress: string
 /* ------------------------------------------------------------------ */
 /**
  * Reputation Flywheel (sybil-resistant by construction):
- *  - Payment volume can be gamed (x402 has 86% of Solana x402 activity "gamed", not organic commerce — Social Graph Ventures).
+ *  - The x402 spec has no dispute or delivery verification mechanism.
  *  - A resolved dispute with real USDC movement back to buyer is sybil-resistant: fraud requires real economic cost (loser-pays fee 0.25%).
  *  - The dispute outcome dataset feeds Recourse's reputation read/write API — this is the dataset AsterPay / ScoutScore can't replicate.
  */

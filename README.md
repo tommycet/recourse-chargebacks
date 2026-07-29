@@ -14,15 +14,15 @@
 
 ### x402 Has No Safety Net
 
-The HTTP 402 payment protocol unlocked a new paradigm: machines paying machines, at internet scale, without human approval flows. Agents can now purchase API access, compute time, data feeds, and services autonomously — and they do. Over **165 million x402 transactions** have settled since the protocol's adoption.
+The HTTP 402 payment protocol unlocked a new paradigm: machines paying machines, at internet scale, without human approval flows. Agents can now purchase API access, compute time, data feeds, and services autonomously — and they do. The protocol has seen rapid adoption across AI agent payment flows.
 
 But there is a critical flaw baked into the spec.
 
-From [x402 GitHub Issue #1645](https://github.com/coinbase/x402/issues/1645):
+From [x402 Protocol Specification v2, §2 Core Payment Flow](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md):
 
 > *"/settle executes blockchain transfer with zero delivery verification. A malicious server can pocket funds and return nothing, with no recourse for buyers."*
 
-That single sentence describes a $3.2 billion attack surface. According to research by **Social Graph Ventures**, **86% of disputed x402 transactions** involved a seller who received payment but provided degraded, incorrect, or zero service — with buyers having no mechanism to contest the outcome.
+The x402 specification defines a payment flow that goes from payment authorization to blockchain settlement — with no dispute, delivery verification, or chargeback mechanism. A seller can receive payment and provide degraded or zero service, and the buyer has no recourse.
 
 ### The Pattern Is Old. The Solution Already Exists — For Humans.
 
@@ -268,7 +268,7 @@ See [docs/keeperhub-integration.md](docs/keeperhub-integration.md) for the full 
 
 ## Why This Matters Now
 
-The x402 protocol is being adopted faster than the infrastructure around it can mature. Every week, more autonomous agents are authorized to spend real money on behalf of real users and businesses. Every week, the attack surface described in issue #1645 grows.
+The x402 protocol is being adopted faster than the infrastructure around it can mature. Every week, more autonomous agents are authorized to spend real money on behalf of real users and businesses. Every week, the attack surface described in the x402 settlement flow grows.
 
 Recourse is not a theoretical fix. It is a deployed, working system that proves the safety model is possible without changing the x402 spec, without slowing down payments, and without requiring human intervention.
 

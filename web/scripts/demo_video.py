@@ -19,7 +19,7 @@ SCENES = [
      "load_index", """Recourse — chargebacks for the machine economy.
 We built the buyer-protection layer agent payments forgot to include."""),
     ("problem", 14,
-     "scroll_problem", """The problem is quantified: x402 processed 165 million transactions from 69 thousand agents. Social Graph Ventures found 86 percent of Solana x402 activity was gamed — not real commerce. Coinbase's own repository admits it in issue 1645: the settle endpoint executes a blockchain transfer with zero delivery verification. A malicious server can take funds and return nothing. No recourse for the buyer."""),
+     "scroll_problem", """The problem is clear: the x402 protocol specification defines a payment flow from authorization to blockchain settlement with zero delivery verification. No dispute mechanism. No chargeback. The settle endpoint executes a blockchain transfer, and a malicious server can take funds and return nothing. No recourse for the buyer."""),
     ("evidence", 16,
      "scroll_evidence", """Our answer is an evidence bundle: every transaction emits a signed, hash-committed record — request digest, response digest, content digest, transaction hash, timestamp, signer identity. Hash-committed, not raw payload — keeps bundles under one kilobyte and verifiable. It quietly fixes the x402 receipts hole: today, payment history is in-memory and lost on server restart. Our bundle makes it persistent, auditable, exportable for EU MiCA and VAT compliance."""),
     ("tiered", 16,
@@ -29,7 +29,7 @@ We built the buyer-protection layer agent payments forgot to include."""),
     ("reputation_flywheel", 12,
      "scroll_demo_stats", """The flywheel: resolved disputes where money actually moved are sybil-resistant by construction. Fraud requires real economic cost — the loser pays a 0.25 percent fee, well below the card-network 2.9 percent plus dispute fee stack. That dataset becomes the reputation layer no competitor can replicate — not AsterPay, not ScoutScore."""),
     ("risks", 10,
-     "show_footer", """Risks, honestly. The x402 Foundation — Google, Visa, AWS, Circle, Anthropic, Cloudflare — could standardize disputes themselves. Our mitigation: be the reference implementation inside that process, and our PR to issue 1645 is exactly that invitation. If organic agent commerce stays small, we pivot on the receipts layer — enterprise fleets closing their books for autonomous agent spend. The adversarial-game risk for the arbiter is contained by launching objective-only tiers and expanding as the public rulebook hardens."""),
+     "show_footer", """Risks, honestly. The x402 Foundation — Google, Visa, AWS, Circle, Anthropic, Cloudflare — could standardize disputes themselves. Our mitigation: be the reference implementation inside that process, and our PR to the x402 settlement flow is exactly that invitation. If organic agent commerce stays small, we pivot on the receipts layer — enterprise fleets closing their books for autonomous agent spend. The adversarial-game risk for the arbiter is contained by launching objective-only tiers and expanding as the public rulebook hardens."""),
     ("close", 6,
      "end", """Build Recourse. It is the one idea where a named VC ask, an open protocol hole, fresh hackathon near-misses, a DeepMind paper, and empty shelves across every launch platform — all point at the same coordinates. Before August 13.""")
 ]

@@ -1,0 +1,11 @@
+Recourse resolves disputes for AI agent payments. When an agent pays via x402 and the service fails, there's no way to get a refund. Recourse fixes this by holding funds in on-chain escrow until delivery is confirmed.
+
+When a dispute is raised, an AI arbiter evaluates evidence — comparing request hashes against response hashes and delivery status — then issues a binding verdict.
+
+KeeperHub executes the resolution on-chain. The arbiter calls KeeperHub's Direct Execution API, which signs and broadcasts the resolveDispute transaction. No private keys needed.
+
+Here's a real execution on Sepolia. Escrow number three — ten USDC for an AI image generation service that never delivered. The seller received payment but returned nothing.
+
+The arbiter reviewed the evidence: delivery failed, hashes didn't match. Verdict: buyer wins, ninety percent confidence. KeeperHub executed the resolution. Funds returned to the buyer.
+
+This is the dispute resolution layer for the machine economy. Real on-chain escrow, real AI arbitration, real KeeperHub execution.

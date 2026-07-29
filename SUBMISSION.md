@@ -12,9 +12,9 @@ Recourse gives autonomous AI agents the same chargeback protections humans have 
 
 ## Problem
 
-The HTTP 402 payment protocol processes **165M+ transactions** from ~69K agents. But it has a critical accountability gap.
+The HTTP 402 payment protocol enables autonomous agent payments via USDC on Base. But it has a critical accountability gap.
 
-From [x402 GitHub Issue #1645](https://github.com/coinbase/x402/issues/1645):
+From [x402 Protocol Specification v2, §2 Core Payment Flow](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md):
 
 > *"/settle executes blockchain transfer with zero delivery verification. A malicious server can pocket funds and return nothing, with no recourse for buyers."*
 
@@ -83,7 +83,7 @@ The entire onchain execution path routes through KeeperHub:
 | Executes onchain via KeeperHub | ✅ KeeperHub workflow calls `resolveDispute()` — tx hash in output |
 | Uses KeeperHub surfaces | ✅ MCP server, webhook trigger, web3/read-contract + write-contract, audit trail |
 | Reliability + observability | ✅ Condition node guards, KeeperHub audit trail, retry on gas spike |
-| Originality + real-world usefulness | ✅ Addresses documented gap in x402 (#1645), first working implementation |
+| Originality + real-world usefulness | ✅ Addresses documented gap in x402 (§2), first working implementation |
 | Integration quality + DX | ✅ Drop-in `keeperhub-arbiter.ts`, clean evidence bundle spec, 28-test Foundry suite |
 
 ---

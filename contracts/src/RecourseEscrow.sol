@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 /**
  * @title RecourseEscrow
  * @dev Escrowed settlement for agent payments. Evidence bundles
- * (hash-committed) replace raw payloads — closes x402 #1645 receipts gap.
+ * (hash-committed) replace raw payloads — closes x402 spec receipts gap.
  * Arbiter role controls dispute resolution; auto-refund after TIMEOUT.
  * 1% platform fee on confirmDelivery and resolveDispute.
  * 7-day DISPUTE_EXPIRY allows anyone to forceResolve (refund buyer) after expiry.

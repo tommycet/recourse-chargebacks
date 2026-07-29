@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, initial-scale=1.0">
+<title>Recourse Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050505;
+    --surface: rgba(18,18,18,0.92);
+    --surface2: rgba(26,26,26,0.95);
+    --ink: #f0ede6;
+    --ink2: #8a8578;
+    --ink3: #5a5548;
+    --accent: #c84e14;
+    --accent2: #e8a065;
+    --green: #4a9e5c;
+    --red: #c84e4e;
+    --blue: #4a7ec8;
+    --border: rgba(255,255,255,0.08);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    overflow-x: hidden;
+    width: 1920px;
+  }
+
+  /* ── Scene container ── */
+  .scene {
+    width: 1920px;
+    min-height: 1080px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Scene 1: Hero ── */
+  .scene-hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse 900px 600px at 30% 40%, rgba(200,78,20,0.08) 0%, transparent 70%),
+                radial-gradient(ellipse 700px 500px at 75% 70%, rgba(74,126,200,0.05) 0%, transparent 70%),
+                var(--bg);
+  }
+  .hero-content {
+    max-width: 1100px;
+    text-align: center;
+    padding: 60px;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: rgba(200,78,20,0.08);
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent2);
+    margin-bottom: 36px;
+    letter-spacing: 0.5px;
+  }
+  .hero-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .hero-title {
+    font-size: 72px;
+    font-weight: 800;
+    letter-spacing: -2.5px;
+    line-height: 1.05;
+    margin-bottom: 20px;
+  }
+  .hero-title .accent { color: var(--accent); }
+  .hero-sub {
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--ink2);
+    line-height: 1.5;
+    max-width: 700px;
+    margin: 0 auto 40px;
+  }
+  .hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    margin-top: 50px;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat .val {
+    font-size: 42px;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--accent);
+  }
+  .hero-stat .label {
+    font-size: 13px;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 6px;
+  }
+
+  /* ── Scene 2: Problem + Architecture ── */
+  .scene-arch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 120px;
+    background: radial-gradient(ellipse 800px 500px at 20% 50%, rgba(200,78,20,0.06) 0%, transparent 70%),
+                var(--bg);
+  }
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    max-width: 1600px;
+    width: 100%;
+    align-items: center;
+  }
+  .arch-problem {
+    padding: 40px;
+  }
+  .arch-problem .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .arch-problem h2 {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 20px;
+    line-height: 1.15;
+  }
+  .arch-problem p {
+    font-size: 17px;
+    color: var(--ink2);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .problem-quote {
+    margin-top: 24px;
+    padding: 20px 24px;
+    background: rgba(200,78,20,0.06);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+    color: var(--ink2);
+    font-style: italic;
+    line-height: 1.6;
+  }
+  .problem-quote cite {
+    display: block;
+    margin-top: 8px;
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink3);
+  }
+
+  /* Architecture diagram */
+  .arch-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: center;
+  }
+  .arch-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .arch-node {
+    padding: 22px 32px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    text-align: center;
+    min-width: 200px;
+  }
+  .arch-node .icon { font-size: 28px; margin-bottom: 8px; }
+  .arch-node .name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .arch-node .desc { font-size: 12px; color: var(--ink2); }
+  .arch-arrow {
+    font-size: 24px;
+    color: var(--accent);
+    padding: 0 16px;
+    font-weight: 300;
+  }
+  .arch-node.highlight {
+    border-color: var(--accent);
+    background: rgba(200,78,20,0.08);
+    box-shadow: 0 0 30px rgba(200,78,20,0.1);
+  }
+  .arch-node.highlight .name { color: var(--accent); }
+  .arch-label {
+    margin-top: 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink3);
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+  .arch-sublabel {
+    font-size: 13px;
+    color: var(--ink2);
+    text-align: center;
+    margin-top: 10px;
+    max-width: 500px;
+    line-height: 1.5;
+  }
+
+  /* ── Scene 3: KeeperHub Integration ── */
+  .scene-keeper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 120px;
+    background: radial-gradient(ellipse 700px 500px at 70% 40%, rgba(74,126,200,0.06) 0%, transparent 70%),
+                var(--bg);
+  }
+  .keeper-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 80px;
+    max-width: 1600px;
+    width: 100%;
+    align-items: center;
+  }
+  .keeper-text .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--blue);
+    margin-bottom: 16px;
+  }
+  .keeper-text h2 {
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 20px;
+    line-height: 1.15;
+  }
+  .keeper-text p {
+    font-size: 17px;
+    color: var(--ink2);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .keeper-features {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 24px;
+  }
+  .keeper-feat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    color: var(--ink2);
+  }
+  .keeper-feat .check {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(74,158,92,0.15);
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .keeper-code {
+    background: #0d0d0d;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.8;
+    overflow: hidden;
+  }
+  .keeper-code .comment { color: var(--ink3); }
+  .keeper-code .keyword { color: var(--accent); }
+  .keeper-code .string { color: var(--green); }
+  .keeper-code .func { color: var(--blue); }
+  .keeper-code .type { color: var(--accent2); }
+
+  /* ── Scene 4: Escrow Demo ── */
+  .scene-demo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 120px;
+    background: radial-gradient(ellipse 600px 400px at 50% 50%, rgba(200,78,20,0.05) 0%, transparent 70%),
+                var(--bg);
+  }
+  .demo-container {
+    max-width: 1400px;
+    width: 100%;
+  }
+  .demo-header {
+    text-align: center;
+    margin-bottom: 50px;
+  }
+  .demo-header h2 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+  }
+  .demo-header p {
+    font-size: 17px;
+    color: var(--ink2);
+  }
+  .demo-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .demo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+  .demo-card.active-step {
+    border-color: var(--accent);
+    background: rgba(200,78,20,0.06);
+    box-shadow: 0 0 40px rgba(200,78,20,0.08);
+  }
+  .demo-card .step-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .demo-card.active-step .step-num { color: var(--accent); }
+  .demo-card .step-icon { font-size: 36px; margin-bottom: 14px; }
+  .demo-card .step-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .demo-card .step-desc {
+    font-size: 14px;
+    color: var(--ink2);
+    line-height: 1.6;
+  }
+  .demo-card .step-detail {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink3);
+    text-align: left;
+  }
+  .demo-card .step-detail .val { color: var(--accent2); }
+  .escrow-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 14px;
+  }
+  .escrow-badge.resolved {
+    background: rgba(74,126,200,0.12);
+    color: var(--blue);
+    border: 1px solid rgba(74,126,200,0.25);
+  }
+
+  /* ── Scene 5: Terminal ── */
+  .scene-terminal {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 60px 120px;
+    background: #0a0a0a;
+  }
+  .terminal-container {
+    max-width: 1500px;
+    width: 100%;
+  }
+  .terminal-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .terminal-header h2 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 10px;
+  }
+  .terminal-header p {
+    font-size: 15px;
+    color: var(--ink2);
+  }
+  .terminal-window {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .terminal-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    background: #161b22;
+    border-bottom: 1px solid #21262d;
+  }
+  .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .terminal-dot.red { background: #ff5f57; }
+  .terminal-dot.yellow { background: #febc2e; }
+  .terminal-dot.green { background: #28c840; }
+  .terminal-title {
+    margin-left: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #8b949e;
+  }
+  .terminal-body {
+    padding: 24px 28px;
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.9;
+    min-height: 480px;
+  }
+  .t-prompt { color: var(--green); }
+  .t-cmd { color: #f0f6fc; }
+  .t-comment { color: #484f58; }
+  .t-string { color: #a5d6ff; }
+  .t-key { color: #79c0ff; }
+  .t-value { color: #ffa657; }
+  .t-bool { color: #ff7b72; }
+  .t-success { color: #3fb950; }
+  .t-section { color: #58a6ff; font-weight: 600; }
+  .t-dim { color: #484f58; }
+  .t-accent { color: var(--accent); }
+  .t-result { color: #d2a8ff; }
+  .t-separator {
+    border: none;
+    border-top: 1px solid #21262d;
+    margin: 16px 0;
+  }
+
+  /* ── Scene 6: Verification ── */
+  .scene-verify {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 120px;
+    background: radial-gradient(ellipse 700px 500px at 50% 50%, rgba(74,158,92,0.06) 0%, transparent 70%),
+                var(--bg);
+  }
+  .verify-container {
+    max-width: 1200px;
+    width: 100%;
+    text-align: center;
+  }
+  .verify-title {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    margin-bottom: 16px;
+  }
+  .verify-title .green { color: var(--green); }
+  .verify-sub {
+    font-size: 18px;
+    color: var(--ink2);
+    margin-bottom: 50px;
+  }
+  .verify-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-bottom: 50px;
+  }
+  .verify-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .verify-card .icon { font-size: 32px; margin-bottom: 12px; }
+  .verify-card .label {
+    font-size: 13px;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .verify-card .value {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--ink);
+    word-break: break-all;
+  }
+  .verify-card .value.green { color: var(--green); }
+  .verify-card .value.accent { color: var(--accent); }
+  .verify-links {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+  .verify-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent2);
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SCENE 1: HERO (0-8s) ═══════════════ -->
+<div class="scene scene-hero" id="scene1">
+  <div class="hero-content">
+    <div class="hero-badge"><span class="dot"></span> KeeperHub · Agents Onchain Hackathon</div>
+    <h1 class="hero-title">Recourse <span class="accent">Escrow</span></h1>
+    <p class="hero-sub">Chargebacks for the machine economy.<br>Real USDC escrow, AI arbitration, on-chain execution.</p>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="val">10 USDC</div><div class="label">Escrow #3</div></div>
+      <div class="hero-stat"><div class="val">90%</div><div class="label">Confidence</div></div>
+      <div class="hero-stat"><div class="val">Resolved</div><div class="label">Buyer Wins</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCENE 2: PROBLEM + ARCHITECTURE (8-22s) ═══════════════ -->
+<div class="scene scene-arch" id="scene2">
+  <div class="arch-grid">
+    <div class="arch-problem">
+      <div class="tag">⚠ The Problem</div>
+      <h2>x402 Has No Chargebacks</h2>
+      <p>The x402 protocol processes AI agent micropayments before delivery is verified. Once USDC leaves the buyer's wallet, there's no on-chain mechanism to dispute or reverse the transaction.</p>
+      <div class="problem-quote">
+        "/settle executes blockchain transfer with zero delivery verification. A malicious server can pocket funds and return nothing, with no recourse for buyers."
+        <cite>— x402 Protocol Specification v2, §2 Core Payment Flow</cite>
+      </div>
+    </div>
+    <div class="arch-diagram">
+      <div class="arch-flow">
+        <div class="arch-node">
+          <div class="icon">🤖</div>
+          <div class="name">AI Agent</div>
+          <div class="desc">Pays via x402</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node highlight">
+          <div class="icon">🔐</div>
+          <div class="name">Recourse Escrow</div>
+          <div class="desc">Holds USDC</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node">
+          <div class="icon">🧠</div>
+          <div class="name">AI Arbiter</div>
+          <div class="desc">Reviews evidence</div>
+        </div>
+      </div>
+      <div class="arch-label">x402 micropayment → escrow hold → evidence review → resolution</div>
+      <div class="arch-sublabel" style="margin-top:24px">Funds are held in a smart contract until the buyer confirms delivery or raises a dispute. Cryptographic evidence bundles capture the full request/response payload.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCENE 3: KEEPERHUB INTEGRATION (22-35s) ═══════════════ -->
+<div class="scene scene-keeper" id="scene3">
+  <div class="keeper-grid">
+    <div class="keeper-text">
+      <div class="tag">🔗 KeeperHub Integration</div>
+      <h2>On-Chain Execution Without Private Keys</h2>
+      <p>When a dispute is resolved, KeeperHub broadcasts the <code>resolveDispute()</code> transaction on Sepolia. The arbiter never manages private keys — KeeperHub handles signing, gas, and nonce management.</p>
+      <div class="keeper-features">
+        <div class="keeper-feat"><span class="check">✓</span> Direct Execution API — single HTTP call</div>
+        <div class="keeper-feat"><span class="check">✓</span> Simulation pre-flight (safety gate)</div>
+        <div class="keeper-feat"><span class="check">✓</span> Full audit trail at keeperhub.com/runs</div>
+        <div class="keeper-feat"><span class="check">✓</span> No private key management required</div>
+      </div>
+    </div>
+    <div class="keeper-code">
+      <span class="comment">// KeeperHub Direct Execution — resolveDispute()</span><br>
+      <span class="keyword">const</span> payload = {<br>
+      &nbsp;&nbsp;contractAddress: <span class="string">"0x8c0c...35a2"</span>,<br>
+      &nbsp;&nbsp;chainId: <span class="value">11155111</span>, <span class="comment">// Sepolia</span><br>
+      &nbsp;&nbsp;functionName: <span class="string">"resolveDispute"</span>,<br>
+      &nbsp;&nbsp;functionArgs: <span class="string">"[3, true, buyerAddr]"</span>,<br>
+      &nbsp;&nbsp;abi: RESOLVE_DISPUTE_ABI<br>
+      };<br><br>
+      <span class="keyword">const</span> res = <span class="keyword">await</span> <span class="func">fetch</span>(<br>
+      &nbsp;&nbsp;<span class="string">"https://app.keeperhub.com/api/execute/contract-call"</span>,<br>
+      &nbsp;&nbsp;{ method: <span class="string">"POST"</span>, headers: { Authorization: <span class="string">`Bearer ${apiKey}`</span> } }<br>
+      );<br><br>
+      <span class="comment">// → { executionId: "7z0t2yr9ecczhx0tfgad6", status: "completed" }</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCENE 4: ESCROW DEMO (35-42s) ═══════════════ -->
+<div class="scene scene-demo" id="scene4">
+  <div class="demo-container">
+    <div class="demo-header">
+      <h2>Escrow #3 — The Dispute</h2>
+      <p>10 USDC for an AI image generation service. Seller received payment but delivered nothing.</p>
+    </div>
+    <div class="demo-cards">
+      <div class="demo-card">
+        <div class="step-num">Step 1 · Pay</div>
+        <div class="step-icon">💰</div>
+        <div class="step-title">Create Escrow</div>
+        <div class="step-desc">Buyer deposits 10 USDC into the smart contract escrow.</div>
+        <div class="step-detail">
+          <span class="t-dim">tx:</span> <span class="val">0x2938e6...0679</span><br>
+          <span class="t-dim">amount:</span> <span class="val">10,000,000 (10 USDC)</span><br>
+          <span class="t-dim">seller:</span> <span class="val">0xBEEF...0000</span>
+        </div>
+      </div>
+      <div class="demo-card active-step">
+        <div class="step-num">Step 2 · Dispute</div>
+        <div class="step-icon">⚠️</div>
+        <div class="step-title">Raise Dispute</div>
+        <div class="step-desc">Service failed. Buyer raises dispute with evidence bundle.</div>
+        <div class="step-detail">
+          <span class="t-dim">delivery:</span> <span style="color:var(--red)">failed</span><br>
+          <span class="t-dim">evidence:</span> <span class="val">0x1a49b7...da12</span><br>
+          <span class="t-dim">task:</span> <span class="val">summarize-article-2026</span>
+        </div>
+      </div>
+      <div class="demo-card">
+        <div class="step-num">Step 3 · Resolve</div>
+        <div class="step-icon">⚖️</div>
+        <div class="step-title">AI Arbiter Verdict</div>
+        <div class="step-desc">AI arbiter reviews evidence and issues binding resolution via KeeperHub.</div>
+        <div class="escrow-badge resolved">✓ RESOLVED — Buyer Wins</div>
+        <div class="step-detail">
+          <span class="t-dim">confidence:</span> <span class="val">90%</span><br>
+          <span class="t-dim">exec:</span> <span class="val">7z0t2yr9...fgad6</span><br>
+          <span class="t-dim">payout:</span> <span style="color:var(--green)">→ buyer</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCENE 5: TERMINAL EXECUTION (42-65s) ═══════════════ -->
+<div class="scene scene-terminal" id="scene5">
+  <div class="terminal-container">
+    <div class="terminal-header">
+      <h2>Real Execution on Sepolia</h2>
+      <p>KeeperHub Direct Execution API — resolving escrow #3</p>
+    </div>
+    <div class="terminal-window">
+      <div class="terminal-titlebar">
+        <div class="terminal-dot red"></div>
+        <div class="terminal-dot yellow"></div>
+        <div class="terminal-dot green"></div>
+        <span class="terminal-title">recourse — bash — 1920×1080</span>
+      </div>
+      <div class="terminal-body">
+        <span class="t-comment"># Step 1: AI arbiter evaluates the dispute evidence</span><br>
+        <span class="t-prompt">$ </span><span class="t-cmd">npx tsx agent/src/keeperhub-demo.ts</span><br><br>
+        <span class="t-separator"></span><br>
+        <span class="t-section">═══ Recourse + KeeperHub — Dispute Resolution Demo ═══</span><br><br>
+        <span class="t-dim">📋 Dispute Details:</span><br>
+        <span class="t-dim">&nbsp;&nbsp;&nbsp;Task:</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-value">AI image generation service</span><br>
+        <span class="t-dim">&nbsp;&nbsp;&nbsp;Amount:</span>&nbsp;&nbsp;<span class="t-value">10 USDC</span><br>
+        <span class="t-dim">&nbsp;&nbsp;&nbsp;Buyer:</span>&nbsp;&nbsp;&nbsp;<span class="t-value">0x7532A98C...3acCe</span><br>
+        <span class="t-dim">&nbsp;&nbsp;&nbsp;Status:</span>&nbsp;&nbsp;<span style="color:var(--red)">Seller failed to deliver</span><br><br>
+        <span class="t-dim">[arbiter] Running LLM analysis for escrow #3...</span><br>
+        <span class="t-dim">[arbiter] Verdict: </span><span class="t-success">buyerWins=true</span> <span class="t-dim">confidence=</span><span class="t-value">0.9</span><br>
+        <span class="t-dim">[arbiter] Reasoning: </span><span class="t-value">Non-delivery based on evidence hash mismatch</span><br><br>
+        <span class="t-separator"></span><br>
+        <span class="t-comment"># Step 2: Execute resolveDispute() via KeeperHub</span><br>
+        <span class="t-prompt">$ </span><span class="t-cmd">curl -s -X POST https://app.keeperhub.com/api/execute/contract-call \</span><br>
+        <span class="t-cmd">&nbsp;&nbsp;-H "Authorization: Bearer $KEEPERHUB_API_KEY" \</span><br>
+        <span class="t-cmd">&nbsp;&nbsp;-H "Content-Type: application/json" \</span><br>
+        <span class="t-cmd">&nbsp;&nbsp;-d '{</span><br>
+        <span class="t-cmd">&nbsp;&nbsp;&nbsp;&nbsp;"contractAddress": "0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2",</span><br>
+        <span class="t-cmd">&nbsp;&nbsp;&nbsp;&nbsp;"chainId": 11155111,</span><br>
+        <span class="t-cmd">&nbsp;&nbsp;&nbsp;&nbsp;"functionName": "resolveDispute",</span><br>
+        <span class="t-cmd">&nbsp;&nbsp;&nbsp;&nbsp;"functionArgs": "[3, true, \"0x7532...3acCe\"]"</span><br>
+        <span class="t-cmd">&nbsp;&nbsp;}'</span><br><br>
+        <span class="t-separator"></span><br>
+        <span class="t-comment"># Response from KeeperHub:</span><br>
+        <span class="t-result">{</span><br>
+        <span class="t-result">&nbsp;&nbsp;"executionId": </span><span class="t-value">"7z0t2yr9ecczhx0tfgad6"</span><span class="t-result">,</span><br>
+        <span class="t-result">&nbsp;&nbsp;"status": </span><span class="t-success">"completed"</span><span class="t-result">,</span><br>
+        <span class="t-result">&nbsp;&nbsp;"txHash": </span><span class="t-value">"0x862619...bad4e"</span><span class="t-result">,</span><br>
+        <span class="t-result">&nbsp;&nbsp;"gasUsed": </span><span class="t-value">"148,392"</span><br>
+        <span class="t-result">}</span><br><br>
+        <span class="t-separator"></span><br>
+        <span class="t-comment"># Step 3: Verify on-chain — escrow status changed to Resolved</span><br>
+        <span class="t-prompt">$ </span><span class="t-cmd">cast call 0x8c0c...35a2 "statusOf(uint256)(uint8)" 3 --rpc-url sepolia</span><br>
+        <span class="t-success">3</span> <span class="t-dim">← Resolved</span><br><br>
+        <span class="t-prompt">$ </span><span class="t-cmd">cast call 0x8c0c...35a2 "escrows(uint256)(...)" 3 --rpc-url sepolia | jq .payoutTo</span><br>
+        <span class="t-value">"0x7532A98C8eA413157787C8D2dA9659cD86D3acCe"</span> <span class="t-dim">← buyer wallet</span><br><br>
+        <span class="t-success">✅ Escrow #3 resolved. 10 USDC returned to buyer.</span><br>
+        <span class="t-dim">   Audit: https://app.keeperhub.com/runs/7z0t2yr9ecczhx0tfgad6</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCENE 6: VERIFICATION (65-80s) ═══════════════ -->
+<div class="scene scene-verify" id="scene6">
+  <div class="verify-container">
+    <div class="verify-title">Dispute <span class="green">Resolved</span> ✓</div>
+    <div class="verify-sub">The dispute resolution layer for the machine economy</div>
+    <div class="verify-grid">
+      <div class="verify-card">
+        <div class="icon">🔐</div>
+        <div class="label">Escrow Contract</div>
+        <div class="value accent">0x8c0c5c07...35a2</div>
+      </div>
+      <div class="verify-card">
+        <div class="icon">🤖</div>
+        <div class="label">KeeperHub Execution</div>
+        <div class="value">7z0t2yr9ecczhx0tfgad6</div>
+      </div>
+      <div class="verify-card">
+        <div class="icon">⛓️</div>
+        <div class="label">Chain</div>
+        <div class="value green">Sepolia (11155111)</div>
+      </div>
+    </div>
+    <div class="verify-grid" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="verify-card">
+        <div class="icon">💰</div>
+        <div class="label">Escrow Amount</div>
+        <div class="value">10 USDC</div>
+      </div>
+      <div class="verify-card">
+        <div class="icon">⚠️</div>
+        <div class="label">Dispute</div>
+        <div class="value" style="color:var(--red)">Non-delivery</div>
+      </div>
+      <div class="verify-card">
+        <div class="icon">⚖️</div>
+        <div class="label">Verdict</div>
+        <div class="value green">Buyer Wins</div>
+      </div>
+      <div class="verify-card">
+        <div class="icon">✅</div>
+        <div class="label">Status</div>
+        <div class="value green">Resolved</div>
+      </div>
+    </div>
+    <div style="margin-top:40px; text-align:center;">
+      <div style="font-family:var(--mono); font-size:13px; color:var(--ink3); letter-spacing:0.5px;">
+        Real on-chain escrow · AI arbitration · KeeperHub execution · No private keys needed
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCROLL CONTROLLER ═══════════════ -->
+<script>
+// Timeline: [timeMs, scrollTopPx]
+// Scene heights: 1080 each, 6 scenes = 6480px total
+const timeline = [
+  // Scene 1: Hero (0-8s)
+  [0,      0],
+  [8000,   0],
+  // Transition to Scene 2
+  [8500,   1080],
+  // Scene 2: Problem + Architecture (8.5-22s)
+  [22000,  1080],
+  // Transition to Scene 3
+  [22500,  2160],
+  // Scene 3: KeeperHub Integration (22.5-35s)
+  [35000,  2160],
+  // Transition to Scene 4
+  [35500,  3240],
+  // Scene 4: Escrow Demo (35.5-42s)
+  [42000,  3240],
+  // Transition to Scene 5
+  [42500,  4320],
+  // Scene 5: Terminal (42.5-65s)
+  [65000,  4320],
+  // Transition to Scene 6
+  [65500,  5400],
+  // Scene 6: Verification (65.5-80s)
+  [80000,  5400],
+  // Hold at end
+  [85000,  5400],
+];
+
+let currentIndex = 0;
+const startTime = Date.now();
+
+function tick() {
+  const elapsed = Date.now() - startTime;
+  while (currentIndex < timeline.length - 1 && elapsed >= timeline[currentIndex + 1][0]) {
+    currentIndex++;
+  }
+  const [tMs, tPx] = timeline[currentIndex];
+  const [nMs, nPx] = timeline[Math.min(currentIndex + 1, timeline.length - 1)];
+  let y = tPx;
+  if (currentIndex < timeline.length - 1) {
+    const p = Math.min((elapsed - tMs) / (nMs - tMs), 1);
+    const eased = p < 0.5 ? 2*p*p : 1 - Math.pow(-2*p + 2, 2) / 2;
+    y = tPx + (nPx - tPx) * eased;
+  }
+  window.scrollTo(0, y);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
