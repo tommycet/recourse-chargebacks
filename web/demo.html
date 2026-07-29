@@ -1121,9 +1121,8 @@ async function doCreateEscrow() {
   }
 
   if (!escrowContractAddr) { log('No contract deployed','err'); return; }
-  const amount = ethers.utils.parseUnits(document.getElementById('inputAmount').value, 6);
-  const seller = document.getElementById('inputSeller').value || walletAddr;
-  const taskDesc = document.getElementById('inputTask').value || 'demo-task-' + Date.now();
+  const amount = ethers.utils.parseUnits(amountStr, 6);
+  // seller, taskDesc already declared above
   let evHash = document.getElementById('inputEvidence').value;
   if (!evHash || evHash === '0x' + '0'.repeat(64)) {
     evHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(taskDesc + '-' + Date.now()));

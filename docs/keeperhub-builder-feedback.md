@@ -39,7 +39,23 @@ We built a dispute resolution/chargeback system for agent payments using KeeperH
 ### Key Metric
 Our single API call executed `resolveDispute(3, true, buyerAddr)` in one shot. 1 KeeperHub API call = 1 onchain tx.
 
-## Files
+### Issues We'd File (For Onboarding Bounty)
+
+Based on our integration experience, here are the specific reproducible issues we'd file against the KeeperHub repo:
+
+1. **[Bug] `txHash` is null in Direct Execution API response** — After `POST /api/execute/contract-call` succeeds, `txHash` is null. Must poll Etherscan or Blockscout to find the actual tx hash. Suggest returning txHash in the response once broadcast, or providing a `GET /api/execute/{id}/status` endpoint.
+
+2. **[Docs] Direct Execution API response schema undocumented** — The docs show the request payload but not the response JSON shape. We had to trial-and-error to discover fields like `executionId`, `simulate`, and the null txHash behavior.
+
+3. **[Docs] No retry strategy guidance** — The API returns 429s under load. No docs on whether retries are safe, what idempotency key to use, or what backoff schedule to follow. We implemented exponential backoff (2s/4s/8s) but guidance would help.
+
+4. **[Feature] Execution status polling endpoint** — `GET /api/execute/{executionId}` should return: status (pending/broadcast/confirmed/failed), txHash, blockNumber, gasUsed. Currently returns minimal info.
+
+5. **[Onboarding] Zero-to-first-tx starter template** — No official "hello world" repo. Our `docs/keeperhub-integration.md` covers the 5-step flow but a cloneable repo would reduce time-to-first-tx from 2h to 15min.
+
+### Files
 - Integration code: `agent/src/keeperhub-arbiter.ts`
+- MCP integration: `agent/src/keeperhub-mcp.ts`
 - Integration docs: `docs/keeperhub-integration.md`
+- Builder feedback: `docs/keeperhub-builder-feedback.md`
 - Demo output: `agent/src/keeperhub-demo-output.json`
