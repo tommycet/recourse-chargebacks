@@ -19,7 +19,7 @@ SCENES = [
      "load_index", """Recourse — chargebacks for the machine economy.
 We built the buyer-protection layer agent payments forgot to include."""),
     ("problem", 14,
-     "scroll_problem", """The problem is clear: the x402 protocol specification defines a payment flow from authorization to blockchain settlement with zero delivery verification. No dispute mechanism. No chargeback. The settle endpoint executes a blockchain transfer, and a malicious server can take funds and return nothing. No recourse for the buyer."""),
+     "scroll_problem", """The problem is clear: the x402 specification defines a four-step payment flow from request to settlement. No dispute mechanism. No delivery verification. No chargeback. Once the settle endpoint broadcasts the blockchain transfer, the payment is final — even if the seller delivered nothing."""),
     ("evidence", 16,
      "scroll_evidence", """Our answer is an evidence bundle: every transaction emits a signed, hash-committed record — request digest, response digest, content digest, transaction hash, timestamp, signer identity. Hash-committed, not raw payload — keeps bundles under one kilobyte and verifiable. It quietly fixes the x402 receipts hole: today, payment history is in-memory and lost on server restart. Our bundle makes it persistent, auditable, exportable for EU MiCA and VAT compliance."""),
     ("tiered", 16,

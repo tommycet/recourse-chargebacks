@@ -16,7 +16,7 @@ The HTTP 402 payment protocol enables autonomous agent payments via USDC on Base
 
 From [x402 Protocol Specification v2, §2 Core Payment Flow](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md):
 
-> *"/settle executes blockchain transfer with zero delivery verification. A malicious server can pocket funds and return nothing, with no recourse for buyers."*
+The x402 specification defines a 4-step payment flow: request → payment required → payment authorization → settlement. Nowhere in the spec is there a dispute, delivery verification, or chargeback mechanism. Once `/settle` broadcasts the blockchain transfer, the payment is final — even if the seller delivered nothing.
 
 x402 explicitly treats "no chargebacks" as a feature. That's the gap: **irreversibility is exactly why no serious buyer will route non-trivial value through these rails.** Card networks learned this in 1974. No one has rebuilt it for the machine economy.
 

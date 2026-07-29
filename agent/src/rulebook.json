@@ -20,7 +20,7 @@
   },
   "references": [
     "a16z agent-payments deep dive (2026): agent scope, KYA, liability — liability unsolved.",
-    "x402 spec §2 (Core Payment Flow) (Coinbase): /settle executes blockchain transfer with zero delivery verification — no chargeback mechanism.",
+    "x402 spec §2 (Core Payment Flow) (Coinbase): /settle broadcasts a blockchain transfer — the spec defines no dispute or delivery verification mechanism — no chargeback mechanism.",
     "DeepMind 'Intelligent AI Delegation' (Tomášev et al., 2026): delegation + arbitration blueprint.",
     "Visa/Mastercard 'trusted agent' programs: card networks defend the dispute-system moat crypto lacks."
   ]

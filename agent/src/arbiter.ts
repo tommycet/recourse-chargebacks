@@ -1,7 +1,7 @@
 // agent/src/arbiter.ts — Tier-0 auto-verifier + Tier-1 AI arbiter agent
 // Reference: DeepMind "Intelligent AI Delegation" (Tomašev et al., 2026) — delegation + arbitration blueprint.
 // Reference: a16z agent-payments stack analysis (2026): liability problem = "who bears cost when agent-initiated transaction is reversed?"
-// Reference: x402 repo the x402 settlement flow: ``/settle` has zero delivery verification — evidence bundles fix this.
+// x402 spec §2 defines payment → settlement with no dispute or delivery verification — evidence bundles fix this.
 
 import * as fs from "fs";
 import * as path from "path";

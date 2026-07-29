@@ -20,7 +20,7 @@ But there is a critical flaw baked into the spec.
 
 From [x402 Protocol Specification v2, §2 Core Payment Flow](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md):
 
-> *"/settle executes blockchain transfer with zero delivery verification. A malicious server can pocket funds and return nothing, with no recourse for buyers."*
+The x402 specification defines a 4-step payment flow: request → payment required → payment authorization → settlement. Nowhere in the spec is there a dispute, delivery verification, or chargeback mechanism. Once `/settle` broadcasts the blockchain transfer, the payment is final — even if the seller delivered nothing.
 
 The x402 specification defines a payment flow that goes from payment authorization to blockchain settlement — with no dispute, delivery verification, or chargeback mechanism. A seller can receive payment and provide degraded or zero service, and the buyer has no recourse.
 
