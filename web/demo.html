@@ -579,6 +579,70 @@
         <span class="sf-arrow">→</span>
         <span class="sf-step" id="sf-step3">3. ARBITER RESOLVES</span>
       </div>
+
+      <!-- Multi-Agent Pipeline Visualization -->
+      <div class="panel pipeline-panel fade-in" id="pipelinePanel" style="display:none">
+        <div class="panel-header">
+          <h2>Multi-Agent Pipeline Visualization</h2>
+          <span class="badge badge-blue" id="pipelineBadge">IDLE</span>
+        </div>
+        <div class="pipeline-subtitle">Four-phase onchain dispute resolution — each agent verifies independently before KeeperHub executes.</div>
+        <div class="pipeline-phases" id="pipelinePhases">
+          <!-- Phase 1: Evidence Verifier -->
+          <div class="pipeline-phase p-phase-pending" id="p-phase-1">
+            <div class="pipeline-phase-header">
+              <span class="pipeline-status" id="p-status-1">○</span>
+              <div>
+                <div class="pipeline-step-num">PHASE 1</div>
+                <div class="pipeline-step-name">Evidence Verifier</div>
+              </div>
+            </div>
+            <div class="pipeline-step-role">Validates evidence bundle hash and request/response payload integrity</div>
+            <div class="pipeline-step-detail" id="p-detail-1">Awaiting evidence&#8230;</div>
+          </div>
+          <div class="pipeline-connector">→</div>
+          <!-- Phase 2: AI Arbiter -->
+          <div class="pipeline-phase p-phase-pending" id="p-phase-2">
+            <div class="pipeline-phase-header">
+              <span class="pipeline-status" id="p-status-2">○</span>
+              <div>
+                <div class="pipeline-step-num">PHASE 2</div>
+                <div class="pipeline-step-name">AI Arbiter</div>
+              </div>
+            </div>
+            <div class="pipeline-step-role">Analyzes evidence, renders binding verdict (refund or payout)</div>
+            <div class="pipeline-step-detail" id="p-detail-2">Awaiting dispute&#8230;</div>
+          </div>
+          <div class="pipeline-connector">→</div>
+          <!-- Phase 3: Policy Agent -->
+          <div class="pipeline-phase p-phase-pending" id="p-phase-3">
+            <div class="pipeline-phase-header">
+              <span class="pipeline-status" id="p-status-3">○</span>
+              <div>
+                <div class="pipeline-step-num">PHASE 3</div>
+                <div class="pipeline-step-name">Policy Agent</div>
+              </div>
+            </div>
+            <div class="pipeline-step-role">Applies policy rules, authorization scope, and compliance checks</div>
+            <div class="pipeline-step-detail" id="p-detail-3">Awaiting arbiter verdict&#8230;</div>
+          </div>
+          <div class="pipeline-connector">→</div>
+          <!-- Phase 4: KeeperHub -->
+          <div class="pipeline-phase p-phase-pending" id="p-phase-4">
+            <div class="pipeline-phase-header">
+              <span class="pipeline-status" id="p-status-3" style="display:none"></span>
+              <span class="pipeline-status" id="p-status-4">○</span>
+              <div>
+                <div class="pipeline-step-num">PHASE 4</div>
+                <div class="pipeline-step-name">KeeperHub</div>
+              </div>
+            </div>
+            <div class="pipeline-step-role">Simulates → Executes onchain tx with retry & MEV protection</div>
+            <div class="pipeline-step-detail" id="p-detail-4">Awaiting policy approval&#8230;</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Create Escrow Panel -->
       <div class="panel fade-in" id="createPanel">
         <div class="panel-header">
