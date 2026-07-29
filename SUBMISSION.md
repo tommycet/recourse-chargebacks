@@ -61,8 +61,26 @@ Recourse integrates **two** KeeperHub surfaces — the arbiter tries MCP first, 
 | 1 | **Executes onchain via KeeperHub** | ✅ Real Sepolia tx `0x6ad71f82…` at block 11,374,381. `resolveDispute(3, true, buyer)` called through KeeperHub's smart account. `Resolved` event emitted, 9.9 USDC refunded. [Blockscout proof](https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0). |
 | 2 | **KeeperHub surfaces** | ✅ MCP server (agent-native tool calls via SDK) **+** Direct Execution API (HTTP fallback). Two surfaces, automatic failover. |
 | 3 | **Reliability & observability** | ✅ Retry with exponential backoff (2/4/8 s), simulate-then-execute safety gate, KeeperHub audit trail (execution ID + tx hash + run URL), onchain verification step. 137/137 Foundry tests pass. |
-| 4 | **Originality & real-world usefulness** | ✅ First chargeback/dispute system for x402 agent payments. Addresses a documented spec gap (x402 §2 has no dispute mechanism). No other team in this hackathon is doing dispute resolution — we checked. |
 | 5 | **Integration quality & DX** | ✅ Clean TypeScript integration (`keeperhub-arbiter.ts` + `keeperhub-mcp.ts`), drop-in evidence bundle spec, 137-test Foundry suite, interactive demo UI, step-by-step integration guide. Multi-agent pipeline (evidence-verifier → arbiter → policy-agent → KeeperHub), x402 protocol design doc, audit trail panel. |
+
+---
+
+## Competitive Landscape
+
+We researched all 6 publicly visible BUIDLs on the DoraHacks event page. None do chargeback/dispute resolution. The competitive threats are:
+
+| Competitor | BUIDL | Threat Level | Overlap | Their Weakness |
+|-----------|-------|-------------|---------|---------------|
+| **Vigil** | 47265 | Highest | MCP + Direct + multi-agent + audit trail | Base mainnet, 108 tests — no dispute resolution |
+| **Sentinel** | 47239 | High | Reliability/observability narrative, audit trail | Wallet guardian, not payments. Single surface |
+| **VaultMind AI** | 47273 | Moderate | LLM reasoning + KeeperHub MCP execution | 2-candidate only, no escrow |
+| **KeeperPayGuard** | 47261 | Moderate | "Agent decides, KeeperHub executes" framing | Payments only, no disputes |
+| **RebalanceKeeper** | 47135 | Low | MCP-native protocol actions | DeFi niche, not payments |
+| **Agent Starter** | 47255 | Bounty-only | Onboarding kit for $1K bounty | No real transaction, cosmetic proof |
+
+**Our defensible differentiator:** We are the only project building dispute resolution for agent payments. The x402 protocol has no chargeback mechanism — we're filling that gap. Combined with our 4-agent pipeline (evidence-verifier → arbiter → policy-agent → KeeperHub) and 137 tests, we have the strongest test suite of any competitor excepting the prior hackathon's Tradewise (125 tests, #1 winner).
+
+**We have more KeeperHub surfaces (MCP + Direct + x402 design) than Sentinel and more tests than Vigil.**
 
 ---
 
