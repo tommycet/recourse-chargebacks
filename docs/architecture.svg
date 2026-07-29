@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" width="900" height="300">
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#c84e14"/>
+    </marker>
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="300" fill="#0a0a0a"/>
+
+  <!-- Title -->
+  <text x="450" y="25" text-anchor="middle" fill="#f0ede6" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700">RECOURSE ARCHITECTURE</text>
+
+  <!-- Row 1: Agent → x402 → RecourseEscrow → Arbiter → Resolution -->
+  <!-- Agent Buyer -->
+  <rect x="10" y="50" width="120" height="50" rx="8" fill="url(#nodeGrad)" stroke="#c84e14" stroke-width="1.5"/>
+  <text x="70" y="72" text-anchor="middle" fill="#f0ede6" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600">Agent</text>
+  <text x="70" y="90" text-anchor="middle" fill="#8a8578" font-family="system-ui,sans-serif" font-size="9">Buyer</text>
+
+  <!-- Arrow -->
+  <line x1="130" y1="75" x2="185" y2="75" stroke="#c84e14" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="158" y="68" text-anchor="middle" fill="#8a8578" font-family="system-ui,sans-serif" font-size="8">pays</text>
+
+  <!-- x402 Endpoint -->
+  <rect x="190" y="50" width="140" height="50" rx="8" fill="url(#nodeGrad)" stroke="#c84e14" stroke-width="1.5"/>
+  <text x="260" y="72" text-anchor="middle" fill="#f0ede6" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600">x402</text>
+  <text x="260" y="90" text-anchor="middle" fill="#8a8578" font-family="system-ui,sans-serif" font-size="9">/sell endpoint</text>
+
+  <!-- Arrow -->
+  <line x1="330" y1="75" x2="385" y2="75" stroke="#c84e14" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="358" y="68" text-anchor="middle" fill="#8a8578" font-family="system-ui,sans-serif" font-size="8">escrow</text>
+
+  <!-- RecourseEscrow.sol -->
+  <rect x="390" y="45" width="165" height="60" rx="8" fill="url(#nodeGrad)" stroke="#c84e14" stroke-width="2"/>
+  <text x="472" y="72" text-anchor="middle" fill="#f0ede6" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600">RecourseEscrow.sol</text>
+  <text x="472" y="92" text-anchor="middle" fill="#8a8578" font-family="system-ui,sans-serif" font-size="9">holds USDC</text>
+
+  <!-- Arrow -->
+  <line x1="555" y1="75" x2="610" y2="75" stroke="#c84e14" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="583" y="68" text-anchor="middle" fill="#8a8578" font-family="system-ui,sans-serif" font-size="8">dispute</text>
+
+  <!-- Arbiter Agent -->
+  <rect x="615" y="50" width="135" height="50" rx="8" fill="url(#nodeGrad)" stroke="#c84e14" stroke-width="1.5"/>
+  <text x="682" y="72" text-anchor="middle" fill="#f0ede6" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600">Arbiter</text>
+  <text x="682" y="90" text-anchor="middle" fill="#8a8578" font-family="system-ui,sans-serif" font-size="9">AI + rule-based</text>
+
+  <!-- Arrow -->
+  <line x1="750" y1="75" x2="805" y2="75" stroke="#c84e14" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="778" y="68" text-anchor="middle" fill="#8a8578" font-family="system-ui,sans-serif" font-size="8">verdict</text>
+
+  <!-- Resolution -->
+  <rect x="810" y="50" width="85" height="50" rx="8" fill="url(#nodeGrad)" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="852" y="72" text-anchor="middle" fill="#22c55e" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600">RESOLVED</text>
+  <text x="852" y="90" text-anchor="middle" fill="#8a8578" font-family="system-ui,sans-serif" font-size="9">refund</text>
+
+  <!-- Row 2: Evidence Bundle flow -->
+  <!-- Evidence Bundle (below x402) -->
+  <rect x="210" y="180" width="130" height="45" rx="8" fill="#0a0a0a" stroke="#6b7280" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="275" y="200" text-anchor="middle" fill="#8a8578" font-family="JetBrains Mono,monospace" font-size="10" font-weight="600">Evidence</text>
+  <text x="275" y="215" text-anchor="middle" fill="#5a5548" font-family="system-ui,sans-serif" font-size="9">Bundle</text>
+
+  <!-- Arrow: x402 → Evidence Bundle -->
+  <line x1="260" y1="100" x2="275" y2="175" stroke="#6b7280" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowhead)"/>
+
+  <!-- Arrow: Evidence Bundle → Arbiter -->
+  <line x1="340" y1="202" x2="682" y2="105" stroke="#6b7280" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowhead)"/>
+  <text x="511" y="160" text-anchor="middle" fill="#5a5548" font-family="system-ui,sans-serif" font-size="8">keccak256 hash committed on-chain</text>
+
+  <!-- USDC Token -->
+  <rect x="10" y="180" width="100" height="45" rx="8" fill="#0a0a0a" stroke="#6b7280" stroke-width="1"/>
+  <text x="60" y="200" text-anchor="middle" fill="#8a8578" font-family="JetBrains Mono,monospace" font-size="10" font-weight="600">USDC</text>
+  <text x="60" y="215" text-anchor="middle" fill="#5a5548" font-family="system-ui,sans-serif" font-size="9">Token</text>
+
+  <!-- Arrow: USDC → Escrow -->
+  <line x1="480" y1="180" x2="472" y2="105" stroke="#6b7280" stroke-width="1" marker-end="url(#arrowhead)"/>
+
+  <!-- Fee label -->
+  <rect x="420" y="235" width="200" height="28" rx="4" fill="#0a0a0a" stroke="#c84e14" stroke-width="1"/>
+  <text x="520" y="253" text-anchor="middle" fill="#c84e14" font-family="JetBrains Mono,monospace" font-size="9">1% platform fee on resolution</text>
+
+  <!-- Status boxes -->
+  <rect x="810" y="180" width="75" height="25" rx="4" fill="#0a0a0a" stroke="#22c55e" stroke-width="1"/>
+  <text x="847" y="197" text-anchor="middle" fill="#22c55e" font-family="JetBrains Mono,monospace" font-size="8">verified</text>
+</svg>

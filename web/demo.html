@@ -197,6 +197,85 @@
   /* ── Animations ── */
   .fade-in { animation:fadeIn 0.3s ease-out; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── Status dots (spec-correct colors) ── */
+  .status-dot.active    { background:#f59e0b; }   /* amber */
+  .status-dot.disputed  { background:#ef4444; }   /* red */
+  .status-dot.confirmed { background:#22c55e; }   /* green */
+  .status-dot.resolved  { background:#6b7280; }   /* gray */
+
+  /* ── Dispute button pulse (only when .pulse-active) ── */
+  @keyframes disputePulse {
+    0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,0.5); background:#ef4444; }
+    50%      { box-shadow:0 0 0 8px rgba(239,68,68,0);  background:#dc2626; }
+  }
+  .btn-red.pulse-active {
+    background:#ef4444;
+    animation: disputePulse 1.4s ease-in-out infinite;
+  }
+
+  /* ── Problem callout ── */
+  .problem-callout {
+    margin:24px 0 0;
+    padding:16px 18px;
+    background:rgba(200,78,20,0.07);
+    border:1px solid rgba(200,78,20,0.25);
+    border-left:3px solid var(--accent);
+    border-radius:var(--radius-sm);
+    text-align:left;
+  }
+  .problem-callout .callout-label {
+    font-family:var(--mono); font-size:10px; font-weight:600;
+    text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:6px;
+  }
+  .problem-callout blockquote {
+    font-size:12px; line-height:1.6; color:var(--ink2);
+    font-style:italic; margin-bottom:4px;
+  }
+  .problem-callout .callout-source {
+    font-family:var(--mono); font-size:10px; color:var(--ink3);
+  }
+
+  /* ── Why Recourse? collapsible ── */
+  .why-recourse {
+    margin-top:12px;
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    background:var(--glass);
+    overflow:hidden;
+  }
+  .why-recourse summary {
+    padding:10px 14px;
+    font-size:12px; font-weight:600; color:var(--ink2);
+    cursor:pointer; list-style:none;
+    display:flex; align-items:center; gap:8px;
+  }
+  .why-recourse summary::-webkit-details-marker { display:none; }
+  .why-recourse summary::before {
+    content:'▶'; font-size:9px; color:var(--accent); transition:transform 0.2s;
+  }
+  .why-recourse[open] summary::before { transform:rotate(90deg); }
+  .why-recourse-body {
+    padding:0 14px 14px;
+    font-size:12px; line-height:1.6; color:var(--ink2);
+  }
+  .why-recourse-body p { margin-bottom:8px; }
+  .why-recourse-body strong { color:var(--ink); }
+
+  /* ── Step-flow indicator ── */
+  .step-flow {
+    display:flex; align-items:center; gap:6px;
+    font-family:var(--mono); font-size:11px;
+    background:var(--glass); border:1px solid var(--border);
+    border-radius:20px; padding:5px 14px;
+  }
+  .step-flow .sf-step {
+    padding:2px 8px; border-radius:4px;
+    font-weight:600; font-size:10px; letter-spacing:0.3px;
+    color:var(--ink2); border:1px solid var(--border);
+  }
+  .step-flow .sf-step.sf-active { color:var(--accent); border-color:var(--accent); background:var(--accent-glow); }
+  .step-flow .sf-arrow { color:var(--ink3); font-size:10px; }
 </style>
 </head>
 <body>
@@ -266,13 +345,38 @@
         <div class="connect-btns">
           <button class="btn btn-primary" onclick="connectMetaMask()">🦊 Connect MetaMask</button>
           <div class="or-divider">or</div>
-          <button class="btn btn-ghost" onclick="connectDemo()">⚡ Demo Mode (Anvil Local)</button>
+          <button class="btn btn-ghost" onclick="connectDemo()">⚡ Demo Mode (Sepolia)</button>
         </div>
+
+        <!-- THE PROBLEM callout -->
+        <div class="problem-callout">
+          <div class="callout-label">⚠ The Problem</div>
+          <blockquote>"/settle executes blockchain transfer with zero delivery verification. A malicious server can pocket funds and return nothing, with no recourse for buyers."</blockquote>
+          <div class="callout-source">— x402 issue #1645</div>
+        </div>
+
+        <!-- Why Recourse? collapsible -->
+        <details class="why-recourse">
+          <summary>Why Recourse?</summary>
+          <div class="why-recourse-body">
+            <p><strong>x402 has no chargebacks.</strong> The protocol processes payments before delivery is verified — once funds leave the buyer's wallet, there's no on-chain mechanism to dispute or reverse the transaction.</p>
+            <p><strong>Recourse adds escrow-backed safety.</strong> Funds are held in a smart contract until the buyer confirms delivery or raises a dispute. Cryptographic evidence bundles capture the full request/response payload as keccak256 hashes committed on-chain.</p>
+            <p><strong>AI arbiter resolves disputes at machine speed.</strong> When a dispute is raised, an on-chain arbiter reviews the evidence and issues a binding refund or payout — no lawyers, no chargebacks, no waiting.</p>
+          </div>
+        </details>
       </div>
     </div>
 
     <!-- Main Workspace (shown after connect) -->
     <div id="workspace" style="display:none">
+      <!-- Step-flow indicator -->
+      <div class="step-flow fade-in" style="margin-bottom:16px; display:inline-flex">
+        <span class="sf-step sf-active" id="sf-step1">1. PAY</span>
+        <span class="sf-arrow">→</span>
+        <span class="sf-step" id="sf-step2">2. DISPUTE</span>
+        <span class="sf-arrow">→</span>
+        <span class="sf-step" id="sf-step3">3. ARBITER RESOLVES</span>
+      </div>
       <!-- Create Escrow Panel -->
       <div class="panel fade-in" id="createPanel">
         <div class="panel-header">
@@ -369,7 +473,11 @@ const CONFIG = {
   sepolia: {
     rpc: 'https://ethereum-sepolia-rpc.publicnode.com',
     chainId: 11155111,
-    explorer: 'https://sepolia.etherscan.io'
+    explorer: 'https://sepolia.etherscan.io',
+    contractAddr: '0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2',
+    usdcAddr: '0xe1d9BE71FeCeBF32424227475d389A3e8BAF01EA',
+    arbiter: '0x7532A98C8eA413157787C8D2dA9659cD86D3acCe',
+    demoKey: '0x930da58b456f2436cd646ccf728d287a6906f63b7d2c420e0f2a2d9b5a2e6172'
   }
 };
 
@@ -450,23 +558,23 @@ async function connectMetaMask() {
 
 async function connectDemo() {
   try {
-    const pk = CONFIG.anvil.demoKey;
-    const rpc = CONFIG.anvil.rpc;
+    const pk = CONFIG.sepolia.demoKey;
+    const rpc = CONFIG.sepolia.rpc;
     provider = new ethers.providers.JsonRpcProvider(rpc);
     const wallet = new ethers.Wallet(pk, provider);
     signer = wallet;
     walletAddr = wallet.address;
     isDemo = true;
-    explorerBase = CONFIG.anvil.explorer;
+    explorerBase = CONFIG.sepolia.explorer;
 
-    // Use known Anvil addresses
-    escrowContractAddr = CONFIG.anvil.contractAddr;
-    usdcAddr = CONFIG.anvil.usdcAddr;
-    arbiterAddr = CONFIG.anvil.arbiter;
+    // Use deployed Sepolia addresses
+    escrowContractAddr = CONFIG.sepolia.contractAddr;
+    usdcAddr = CONFIG.sepolia.usdcAddr;
+    arbiterAddr = CONFIG.sepolia.arbiter;
 
-    log('Demo Mode: connected to local Anvil','ok');
+    log('Demo Mode: connected to Sepolia testnet','ok');
     log('Account: ' + walletAddr,'info');
-    onConnected(31337);
+    onConnected(11155111);
   } catch(e) { log('Demo connect failed: '+e.message,'err'); }
 }
 
@@ -600,9 +708,21 @@ function selectEscrow(id, data, status) {
   if (status === 'Active') {
     confirmBtn.style.display = '';
     disputeBtn.style.display = '';
+    disputeBtn.classList.add('pulse-active');
   } else {
     confirmBtn.style.display = 'none';
     disputeBtn.style.display = 'none';
+    disputeBtn.classList.remove('pulse-active');
+  }
+
+  // Update step-flow indicator
+  const sf1 = document.getElementById('sf-step1');
+  const sf2 = document.getElementById('sf-step2');
+  const sf3 = document.getElementById('sf-step3');
+  if (sf1 && sf2 && sf3) {
+    sf1.classList.toggle('sf-active', status === 'Active');
+    sf2.classList.toggle('sf-active', status === 'Disputed');
+    sf3.classList.toggle('sf-active', status === 'Resolved' || status === 'Confirmed' || status === 'Refunded');
   }
 }
 

@@ -6,6 +6,8 @@ pragma solidity ^0.8.20;
  * @dev Escrowed settlement for agent payments. Evidence bundles
  * (hash-committed) replace raw payloads — closes x402 #1645 receipts gap.
  * Arbiter role controls dispute resolution; auto-refund after TIMEOUT.
+ * 1% platform fee on confirmDelivery and resolveDispute.
+ * 7-day DISPUTE_EXPIRY allows anyone to forceResolve (refund buyer) after expiry.
  */
 interface IERC20 {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
@@ -18,6 +20,8 @@ contract RecourseEscrow {
     address public arbiter;
     address public owner;
     uint256 public constant TIMEOUT = 14 days;
+    uint256 public constant DISPUTE_EXPIRY = 7 days;
+    uint256 public constant FEE_BPS = 100; // 1% = 100 basis points
 
     constructor(address usdc_, address arbiter_) {
         USDC = usdc_;
@@ -44,13 +48,14 @@ contract RecourseEscrow {
     mapping(uint256 => Escrow) public escrows;
     uint256 public nextId = 1;
 
-    event EscrowCreated(uint256 indexed id, address indexed buyer, address indexed seller,
+    event EscrowCreated(uint256 indexed escrowId, address indexed buyer, address indexed seller,
                          uint256 amount, bytes32 taskId, bytes32 evidenceHash);
     event DeliveryConfirmed(uint256 indexed id, bytes32 evidenceHash);
-    event DisputeRaised(uint256 indexed id, bytes32 disputeEvidenceHash);
-    event Resolved(uint256 indexed id, bool buyerWins, address payoutTo, uint256 amount);
+    event DisputeRaised(uint256 indexed escrowId, address indexed buyer, bytes32 disputeEvidenceHash);
+    event Resolved(uint256 indexed escrowId, bool indexed buyerWins, address payoutTo, uint256 amount);
     event AutoRefund(uint256 indexed id);
     event ArbiterChanged(address indexed oldArbiter, address indexed newArbiter);
+    event DisputeExpired(uint256 indexed escrowId, address indexed buyer);
 
     modifier onlyBuyer(uint256 id) {
         require(msg.sender == escrows[id].buyer, "not buyer");
@@ -100,6 +105,15 @@ contract RecourseEscrow {
         emit EscrowCreated(id, buyer, seller, amount, taskId, evidenceBundleHash);
     }
 
+    /// @dev Deducts 1% fee and transfers it to owner. Returns (fee, net).
+    function _takeFee(uint256 amount) internal returns (uint256 fee, uint256 net) {
+        fee = amount * FEE_BPS / 10000;
+        net = amount - fee;
+        if (fee > 0) {
+            require(IERC20(USDC).transfer(owner, fee), "fee transfer failed");
+        }
+    }
+
     function confirmDelivery(uint256 id, bytes32 evidenceHash) public onlyBuyer(id) {
         Escrow storage e = escrows[id];
         require(!e.disputed && !e.resolved, "disputed/resolved");
@@ -107,9 +121,10 @@ contract RecourseEscrow {
         e.evidenceBundleHash = evidenceHash;
         e.resolved = true;
         e.payoutTo = e.seller;
-        require(IERC20(USDC).transfer(e.seller, e.amount), "transfer failed");
+        (, uint256 net) = _takeFee(e.amount);
+        require(IERC20(USDC).transfer(e.seller, net), "transfer failed");
         emit DeliveryConfirmed(id, evidenceHash);
-        emit Resolved(id, false, e.seller, e.amount);
+        emit Resolved(id, false, e.seller, net);
     }
 
     function raiseDispute(uint256 id, bytes32 disputeEvidenceHash) public onlyBuyer(id) {
@@ -119,7 +134,7 @@ contract RecourseEscrow {
         e.disputed = true;
         e.disputeRaisedAt = block.timestamp;
         e.evidenceBundleHash = disputeEvidenceHash;
-        emit DisputeRaised(id, disputeEvidenceHash);
+        emit DisputeRaised(id, e.buyer, disputeEvidenceHash);
     }
 
     function resolveDispute(uint256 id, bool buyerWins, address payoutTo) external onlyArbiter {
@@ -131,8 +146,9 @@ contract RecourseEscrow {
         else require(payoutTo == e.seller, "sellerWins mismatch");
         e.resolved = true;
         e.payoutTo = payoutTo;
-        require(IERC20(USDC).transfer(payoutTo, e.amount), "transfer failed");
-        emit Resolved(id, buyerWins, payoutTo, e.amount);
+        (, uint256 net) = _takeFee(e.amount);
+        require(IERC20(USDC).transfer(payoutTo, net), "transfer failed");
+        emit Resolved(id, buyerWins, payoutTo, net);
     }
 
     function autoRefund(uint256 id) public {
@@ -145,5 +161,19 @@ contract RecourseEscrow {
         require(IERC20(USDC).transfer(e.buyer, e.amount), "transfer failed");
         emit AutoRefund(id);
         emit Resolved(id, true, e.buyer, e.amount);
+    }
+
+    /// @notice Anyone can call after DISPUTE_EXPIRY (7 days) to refund buyer.
+    function forceResolve(uint256 escrowId) external {
+        Escrow storage e = escrows[escrowId];
+        require(e.buyer != address(0), "no escrow");
+        require(e.disputed, "not disputed");
+        require(!e.resolved, "already resolved");
+        require(block.timestamp - e.disputeRaisedAt > DISPUTE_EXPIRY, "dispute expiry not reached");
+        e.resolved = true;
+        e.payoutTo = e.buyer;
+        require(IERC20(USDC).transfer(e.buyer, e.amount), "transfer failed");
+        emit DisputeExpired(escrowId, e.buyer);
+        emit Resolved(escrowId, true, e.buyer, e.amount);
     }
 }
