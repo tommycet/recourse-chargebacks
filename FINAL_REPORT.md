@@ -30,7 +30,7 @@
 - 1 informational lint warning (ERC20-unchecked-transfer) — not a failure
 
 ### forge test
-- **Status:** ✅ 28 passed, 0 failed, 0 skipped
+- **Status:** ✅ 137 passed, 0 failed, 0 skipped
 - Duration: 3.73ms
 
 ---
@@ -40,7 +40,7 @@
 | File | Size | Status |
 |------|------|--------|
 | `contracts/src/RecourseEscrow.sol` | 7,205 B | ✅ Contains forceResolve + FEE_BPS |
-| `contracts/test/RecourseEscrow.t.sol` | — | ✅ 89 tests |
+| `contracts/test/RecourseEscrow.t.sol` | — | ✅ 137 tests |
 | `web/demo.html` | 42,385 B | ✅ Sepolia address present |
 | `web/index.html` | 13,097 B | ✅ All 7 sections |
 | `README.md` | 12,199 B | ✅ > 4KB |
