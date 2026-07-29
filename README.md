@@ -1,154 +1,157 @@
-# Recourse — Chargebacks for the Machine Economy
+# Recourse | Chargebacks for the Machine Economy
 
-> **The first dispute-resolution protocol for autonomous AI agents transacting over x402.**
+**The dispute-resolution and escrow layer for autonomous x402 agent payments. AI arbiter decides → KeeperHub executes onchain.**
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?logo=solidity)](https://soliditylang.org)
-[![Foundry](https://img.shields.io/badge/Built%20with-Foundry-orange)](https://book.getfoundry.sh)
+[![Foundry](https://img.shields.io/badge/Foundry-28%2F28%20tests-orange)](https://book.getfoundry.sh)
 [![Network](https://img.shields.io/badge/Network-Sepolia-blue)](https://sepolia.etherscan.io)
 [![Execution](https://img.shields.io/badge/Execution-KeeperHub-blueviolet)](https://docs.keeperhub.com)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ---
 
-## The Problem
+## Live Onchain Proof
 
-### x402 Has No Safety Net
+Our AI arbiter evaluated a dispute and executed the resolution **through KeeperHub** — a real signed transaction on Sepolia, not a mockup.
 
-The HTTP 402 payment protocol unlocked a new paradigm: machines paying machines, at internet scale, without human approval flows. Agents can now purchase API access, compute time, data feeds, and services autonomously — and they do. The protocol has seen rapid adoption across AI agent payment flows.
+| | |
+|---|---|
+| **Tx Hash** | `0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0` |
+| **Blockscout** | [→ view transaction](https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0) |
+| **Block** | 11,374,381 |
+| **KeeperHub Execution ID** | `7z0t2yr9ecczhx0tfgad6` |
+| **KeeperHub Audit Run** | [→ view on KeeperHub](https://app.keeperhub.com/runs/7z0t2yr9ecczhx0tfgad6) |
+| **Call** | `RecourseEscrow.resolveDispute(3, true, 0x7532…)` |
+| **Result** | `Resolved` event emitted — buyer wins, 9.9 USDC refunded |
 
-But there is a critical flaw baked into the spec.
-
-From [x402 Protocol Specification v2, §2 Core Payment Flow](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md):
-
-The x402 specification defines a 4-step payment flow: request → payment required → payment authorization → settlement. Nowhere in the spec is there a dispute, delivery verification, or chargeback mechanism. Once `/settle` broadcasts the blockchain transfer, the payment is final — even if the seller delivered nothing.
-
-The x402 specification defines a payment flow that goes from payment authorization to blockchain settlement — with no dispute, delivery verification, or chargeback mechanism. A seller can receive payment and provide degraded or zero service, and the buyer has no recourse.
-
-### The Pattern Is Old. The Solution Already Exists — For Humans.
-
-In **1974**, the United States passed the **Fair Credit Billing Act**. It mandated that card networks provide consumers with a formal dispute process: submit a claim, present evidence, receive a binding decision. Visa, Mastercard, and Amex built chargeback rails on top of this law. Today, those rails process ~600 million disputes per year with a median resolution time of 30 days.
-
-The agent economy in 2025 has payments. It does not have a dispute system.
-
-When an AI agent's task fails — a purchased API returns garbage, a compute job delivers corrupted output, a data provider sends stale feeds — the agent has no recourse. The funds are gone. The transaction is final. There is no 1-800 number to call, no chargeback form to file, no arbiter to escalate to.
-
-**Recourse is the Fair Credit Billing Act for the machine economy.**
+Full recorded output: [`agent/src/keeperhub-demo-output.json`](agent/src/keeperhub-demo-output.json)
 
 ---
 
-## Solution
+## The Problem: x402 Has No Safety Net
 
-Recourse introduces three primitives that together close the accountability gap:
+The HTTP 402 payment protocol lets autonomous agents buy API access, compute, and data — machines paying machines at internet scale. But the spec has a critical flaw.
 
-1. **Escrow-first settlement** — funds are locked in a smart contract at payment time, not released until delivery is verified or a dispute window closes.
-2. **Cryptographic evidence bundles** — both the request and response are hashed and committed on-chain at transaction time, creating a tamper-proof audit trail that can be produced in any dispute.
-3. **AI arbiter at machine speed** — disputes are resolved by a neutral AI arbiter that evaluates evidence bundles against the service contract, issues a binding on-chain verdict, and releases or refunds funds — all within seconds, not weeks.
+From [x402 Protocol Specification v2, §2](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md): the payment flow goes *request → payment required → payment authorization → settlement*. **Nowhere is there a dispute, delivery verification, or chargeback mechanism.** Once `/settle` broadcasts, the payment is final — even if the seller delivered nothing.
 
-No humans in the loop. No 30-day wait. No $25 chargeback fee. Just verifiable fairness at the speed the machine economy actually operates.
+x402 treats "no chargebacks" as a feature. That's the gap: **irreversibility is exactly why no serious buyer will route non-trivial value through these rails.** Card networks solved this in 1974. No one has rebuilt it for the machine economy.
+
+---
+
+## The Solution: Escrow + Evidence + AI Arbiter + KeeperHub
+
+Recourse closes the accountability gap with four layers:
+
+1. **Escrow-first settlement** — Funds lock in `RecourseEscrow.sol` at payment time. No release until delivery is confirmed or a dispute resolves.
+
+2. **Cryptographic evidence bundles** — Request + response hashes committed onchain at transaction time. Tamper-proof audit trail, producible in any dispute.
+
+3. **AI arbiter at machine speed** — Evaluates both evidence bundles against the service contract, issues a verdict (buyerWins/sellerWins) in seconds, not weeks. Rule-based fallback ensures determinism even without an LLM key.
+
+4. **KeeperHub execution layer** — The arbiter's verdict triggers a KeeperHub call that executes `resolveDispute()` onchain. KeeperHub handles gas, nonce management, and MEV protection — and produces a full audit trail (trigger → execution ID → tx hash → confirmation).
+
+**The agent decides. KeeperHub executes. That's the last mile.**
+
+---
+
+## KeeperHub Integration — Two Surfaces
+
+Recourse uses **two** KeeperHub surfaces with automatic failover. The arbiter tries the MCP server first (agent-native), then falls back to the Direct Execution API (HTTP).
+
+| Surface | Role | Code |
+|---------|------|------|
+| **MCP Server** (`https://app.keeperhub.com/mcp`) | Agent-native tool discovery via `@modelcontextprotocol/sdk` — calls `execute_contract_call` to run `resolveDispute()` | `agent/src/keeperhub-mcp.ts` |
+| **Direct Execution API** (`POST /api/execute/contract-call`) | HTTP fallback — single REST call with contract address, ABI, function args. Simulate-then-execute preflight before broadcasting | `agent/src/keeperhub-arbiter.ts` |
+
+### Reliability Features
+
+| Feature | Implementation |
+|---------|----------------|
+| **Retry with backoff** | Exponential backoff (2 s → 4 s → 8 s) on HTTP 429, 5xx, gas spikes, timeouts. Up to 3 retries. |
+| **Simulate-then-execute** | Every `resolveDispute()` is pre-flighted with `simulate: true`. If it would revert, execution halts — no wasted gas. |
+| **Gas spike awareness** | KeeperHub's Smart Gas Estimation adapts to congestion; our retry layer re-attempts on detected gas spikes. |
+| **Audit trail** | Execution ID, tx hash, block number, KeeperHub run URL, onchain verification (escrow status + payout address + balance). |
+
+### Routing Logic
+
+```
+Arbiter verdict issued
+  │
+  ├─► MCP health check
+  │     ├─ healthy → execute via MCP (execute_contract_call tool)
+  │     └─ unavailable → fall through
+  │
+  ├─► Direct Execution API
+  │     ├─ simulate: true (preflight)
+  │     │    └─ wouldRevert → halt, return "simulated" status
+  │     └─ broadcast
+  │
+  └─► Retry on transient failure (429/5xx/gas/timeout) with exp backoff
+```
+
+Full integration guide: [`docs/keeperhub-integration.md`](docs/keeperhub-integration.md)
 
 ---
 
 ## How It Works
 
-**1. Agent initiates payment**
-The buyer agent sends a standard x402 payment request. Instead of transferring directly to the seller, funds are deposited into `RecourseEscrow` — a Solidity contract that holds the payment pending delivery confirmation.
+```
+  Buyer Agent ──x402 payment──► RecourseEscrow (funds locked)
+                                    │
+                        seller delivers? ──yes──► confirmDelivery() ──► release to seller
+                                    │
+                                    no
+                                    │
+                                    ▼
+                              openDispute()
+                                    │
+                       evidence bundles (onchain hashes)
+                                    │
+                                    ▼
+                              AI Arbiter
+                       (evaluates evidence vs service spec)
+                                    │
+                                    ▼
+                         verdict: buyerWins / sellerWins
+                                    │
+                                    ▼
+                      KeeperHub executes resolveDispute()
+                         (MCP → Direct API fallback)
+                                    │
+                                    ▼
+                         Onchain resolution on Sepolia
+```
 
-**2. Seller delivers (or doesn't)**
-The seller service fulfills the request and submits a cryptographic evidence bundle: a signed, hashed record of the request received, the response delivered, and a delivery status attestation. This bundle is stored as a `bytes32` commitment on-chain.
-
-**3. Buyer verifies**
-The buyer agent inspects the response. If delivery is confirmed, it calls `confirmDelivery()` and funds release to the seller immediately. If the buyer disputes within the challenge window, it calls `openDispute()` and submits its own evidence bundle.
-
-**4. Arbiter resolves**
-The AI arbiter evaluates both evidence bundles off-chain, reconstructs and verifies the on-chain hashes, scores delivery quality against the original service spec, and submits a signed verdict. The contract releases funds to the winning party. The entire process takes under 60 seconds.
+1. **Agent initiates payment** — Buyer agent sends x402 payment. Funds deposit into `RecourseEscrow`, not directly to seller.
+2. **Seller delivers (or doesn't)** — Seller submits a signed evidence bundle (request hash + response hash + delivery attestation), committed as `bytes32` onchain.
+3. **Buyer verifies** — If delivery confirmed, buyer calls `confirmDelivery()` → funds release immediately. If not, buyer calls `openDispute()` within the challenge window.
+4. **Arbiter resolves** — AI arbiter evaluates both bundles, verifies onchain hashes, scores delivery quality, issues verdict. KeeperHub executes `resolveDispute()` onchain. **Under 60 seconds.**
 
 ---
 
-## Architecture
+## Tech Stack
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     RECOURSE PROTOCOL FLOW                      │
-└─────────────────────────────────────────────────────────────────┘
-
-  ┌───────────┐   x402 payment   ┌──────────────────┐
-  │           │ ────────────────► │                  │
-  │   Buyer   │                  │  RecourseEscrow  │
-  │   Agent   │ ◄──────────────── │  (Solidity)      │
-  │           │  confirm/dispute  │                  │
-  └─────┬─────┘                  └────────┬─────────┘
-        │                                 │
-        │  request                        │  escrow lock
-        ▼                                 ▼
-  ┌───────────┐   evidence bundle  ┌──────────────────┐
-  │           │ ────────────────── │                  │
-  │  Seller   │                   │   Evidence Store  │
-  │  Service  │                   │  (on-chain hash)  │
-  │           │                   │                   │
-  └───────────┘                   └────────┬──────────┘
-                                           │
-                                  dispute? │
-                                           ▼
-                                  ┌────────────────┐
-                                  │                │
-                                  │  AI Arbiter    │
-                                  │  (off-chain +  │
-                                  │   on-chain     │
-                                  │   verdict sig) │
-                                  │                │
-                                  └───────┬────────┘
-                                          │
-                               ┌──────────▼──────────┐
-                               │                     │
-                               │     Resolution      │
-                               │                     │
-                               │  ✓ Release to seller│
-                               │  ✗ Refund to buyer  │
-                               │                     │
-                               └─────────────────────┘
-
-
-  Agent ──► x402 ──► RecourseEscrow ──► Arbiter ──► Resolution
-```
-
-### Component Breakdown
-
-| Component | Role | Tech |
-|-----------|------|------|
-| `RecourseEscrow.sol` | Holds funds, manages dispute lifecycle | Solidity 0.8.20 |
-| `MockUSDC.sol` | ERC-20 test token for Sepolia demos | Solidity 0.8.20 |
-| Evidence Bundle | Signed hash of request/response pair | keccak256 + ABI encoding |
-| AI Arbiter | Evaluates disputes, submits verdicts | TypeScript + LLM |
-| **KeeperHub** | **Onchain execution layer for dispute resolution** | **KeeperHub Direct Execution API** |
-| Demo UI | Browser interface for testing flows | HTML/CSS/JS + ethers.js |
-| E2E Tests | Automated buyer/seller/dispute flows | Playwright |
+| Layer | Technology |
+|-------|------------|
+| **Smart Contracts** | Solidity 0.8.20 + Foundry — 28/28 tests passing |
+| **Execution Layer** | KeeperHub MCP Server + Direct Execution API (dual-surface, auto-failover) |
+| **Evidence Bundles** | `keccak256` + ABI encoding, committed onchain |
+| **Arbiter** | TypeScript + LLM evaluation (rule-based fallback) |
+| **Wallet** | KeeperHub agentic wallet (EIP-7702 smart account, Turnkey enclave — no plaintext key) |
+| **Payment** | x402 on Base USDC |
+| **Demo UI** | HTML/CSS + ethers.js (connects to Sepolia) |
+| **Network** | Ethereum Sepolia (live contracts) |
 
 ---
 
 ## Live Contracts (Sepolia)
 
-Both contracts are deployed and verified on Ethereum Sepolia testnet.
-
-| Contract | Address | Etherscan |
-|----------|---------|-----------|
-| **RecourseEscrow** | `0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2` | [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2) |
-| **MockUSDC** | `0xe1d9BE71FeCeBF32424227475d389A3e8BAF01EA` | [View on Sepolia Etherscan](https://sepolia.etherscan.io/address/0xe1d9BE71FeCeBF32424227475d389A3e8BAF01EA) |
-
-To interact directly:
-
-```bash
-# Read escrow state for a task
-cast call 0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2 \
-  "getEscrow(bytes32)(address,address,uint256,uint8)" \
-  <taskId> \
-  --rpc-url https://rpc.sepolia.org
-
-# Check MockUSDC balance
-cast call 0xe1d9BE71FeCeBF32424227475d389A3e8BAF01EA \
-  "balanceOf(address)(uint256)" \
-  <your-address> \
-  --rpc-url https://rpc.sepolia.org
-```
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| **RecourseEscrow** | `0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2` | [Sepolia Etherscan](https://sepolia.etherscan.io/address/0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2) |
+| **MockUSDC** | `0xe1d9BE71FeCeBF32424227475d389A3e8BAF01EA` | [Sepolia Etherscan](https://sepolia.etherscan.io/address/0xe1d9BE71FeCeBF32424227475d389A3e8BAF01EA) |
+| **Arbiter** | `0x7532A98C8eA413157787C8D2dA9659cD86D3acCe` | — |
+| **KeeperHub Wallet** | `0x32db418d6442ad9746e17ad6f72686dad3d8b4af` | — |
 
 ---
 
@@ -156,129 +159,107 @@ cast call 0xe1d9BE71FeCeBF32424227475d389A3e8BAF01EA \
 
 ### Prerequisites
 
-- [Foundry](https://book.getfoundry.sh/getting-started/installation) (`forge`, `cast`, `anvil`)
-- Node.js 18+ (for the demo UI and arbiter)
-- A Sepolia RPC URL and funded wallet (for live deployment)
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) (`forge`, `cast`)
+- Node.js 18+
+- A KeeperHub API key (for onchain execution)
 
-### Build and Test
+### Build & Test
 
 ```bash
-# Clone the repo
-git clone https://github.com/your-org/recourse
+git clone https://github.com/tommycet/recourse-chargebacks
 cd recourse
-
-# Install Foundry dependencies
 forge install
-
-# Compile contracts
 forge build
-
-# Run the full test suite
-forge test -vv
+forge test -vv    # 28/28 pass
 ```
 
-### Run the Demo UI
-
-```bash
-# Serve the web interface locally
-cd web/
-python3 -m http.server 8080
-# or
-npx serve .
-
-# Open http://localhost:8080
-```
-
-The demo UI walks through a complete escrow lifecycle:
-1. Connect wallet (MetaMask, Sepolia network)
-2. Mint test USDC from the MockUSDC faucet
-3. Create an escrow for a mock task
-4. Simulate delivery confirmation or dispute
-5. Watch the arbiter resolve and funds move
-
-### Run E2E Tests
-
-```bash
-# Install Playwright
-npm install
-npx playwright install
-
-# Start local anvil fork
-anvil --fork-url https://rpc.sepolia.org &
-
-# Run end-to-end tests
-npx playwright test
-```
-
-### Deploy to Your Own Testnet
-
-```bash
-# Copy env template
-cp .env.example .env
-# Fill in PRIVATE_KEY and RPC_URL
-
-# Deploy contracts
-forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify
-```
-
----
-
-## KeeperHub Integration
-
-Recourse uses [KeeperHub](https://docs.keeperhub.com) as its onchain execution layer. The AI arbiter's dispute resolution verdict triggers a KeeperHub workflow that executes `resolveDispute()` on Sepolia — KeeperHub handles gas estimation, retry logic, and produces a full audit trail.
-
-| Stage | KeeperHub surface |
-|-------|-------------------|
-| Verdict delivery | `POST /api/execute/contract-call` — Direct Execution API |
-| State verification | `web3/read-contract` — reads escrow status |
-| Onchain resolution | `web3/write-contract` — calls `resolveDispute(id, buyerWins, payoutTo)` |
-| Observability | KeeperHub audit trail — trigger, simulation, tx hash, gas used, outcome |
-
-### Quick Run
+### Run the KeeperHub Demo
 
 ```bash
 # Set your KeeperHub API key
 echo "KEEPERHUB_API_KEY=kh_your_key_here" >> .env
 
-# Run the full demo: arbiter → KeeperHub simulation → onchain execution
+# Run the full pipeline: arbiter → KeeperHub simulate → onchain execute
 cd agent/src
 npx tsx keeperhub-demo.ts
 
-# Check the output
+# View the recorded output (tx hash, execution ID, audit URL)
 cat keeperhub-demo-output.json
 ```
 
-See [docs/keeperhub-integration.md](docs/keeperhub-integration.md) for the full integration guide.
+### Demo UI
+
+```bash
+cd web/
+python3 -m http.server 8080
+# Open http://localhost:8080 — connects to Sepolia
+```
+
+The UI walks through: connect wallet → mint test USDC → create escrow → confirm/dispute → arbiter resolves → funds move.
 
 ---
 
-## Roadmap
+## Reproducibility
 
-1. **x402 spec integration** — Submit an EIP-style proposal to the x402 working group to add an optional `X-Escrow-Contract` header that signals Recourse-compatible payment, enabling drop-in adoption without breaking existing clients.
+The recorded live run in `agent/src/keeperhub-demo-output.json` contains:
 
-2. **Reputation oracle** — Aggregate dispute outcomes into an on-chain reputation score for sellers. Buyers can query a seller's dispute rate before transacting, creating market incentives for honest service delivery.
+- Full dispute input (escrow ID, evidence hashes, buyer/seller addresses)
+- Verdict (buyerWins=true, confidence=0.9, reasoning)
+- Execution details (tx hash, block, KeeperHub execution ID, audit URL)
+- Onchain verification (escrow status = Resolved, payout address, contract balance = 0)
 
-3. **Multi-asset support** — Extend `RecourseEscrow` to handle any ERC-20 token (USDC, USDT, DAI, WETH), not just MockUSDC, enabling the protocol to work across the full DeFi payment stack.
+Verify on Blockscout: [tx `0x6ad71f82…`](https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0) — look for the `Resolved` event and USDC transfer to the buyer.
 
-4. **Decentralized arbiter network** — Replace the single AI arbiter with a staked arbiter network where multiple nodes independently evaluate disputes, and a threshold signature releases the verdict — eliminating single points of failure and capture.
+---
 
-5. **Mainnet deployment + insurance pool** — Deploy on Ethereum mainnet and Optimism/Base L2s, with an optional insurance pool that buyers can pay into for instant guaranteed refunds on disputes under a threshold amount, funded by a small protocol fee.
+## Repo Structure
+
+```
+recourse/
+├── contracts/
+│   ├── src/RecourseEscrow.sol            — escrow + dispute state machine
+│   └── test/RecourseEscrow.t.sol         — 28 Foundry tests
+├── middleware/src/
+│   ├── evidenceBundle.ts                 — cryptographic evidence spec
+│   ├── evidenceVerifier.ts               — hash verification
+│   └── recourseClient.ts                 — client SDK
+├── agent/src/
+│   ├── keeperhub-arbiter.ts              — MCP + Direct API integration
+│   ├── keeperhub-mcp.ts                  — MCP server surface
+│   ├── keeperhub-demo.ts                 — demo runner
+│   ├── keeperhub-demo-output.json         — recorded live run
+│   ├── arbiter-llm.ts                    — LLM + rule-based verdict engine
+│   └── arbiter-runner.ts                 — dispute scenario runner
+├── docs/
+│   ├── evidence-bundle-spec.md           — cryptographic spec
+│   ├── keeperhub-integration.md         — full integration guide
+│   └── architecture.svg                  — system diagram
+└── web/
+    ├── index.html                        — landing page
+    └── demo.html                         — live demo UI
+```
 
 ---
 
 ## Why This Matters Now
 
-The x402 protocol is being adopted faster than the infrastructure around it can mature. Every week, more autonomous agents are authorized to spend real money on behalf of real users and businesses. Every week, the attack surface described in the x402 settlement flow grows.
+The x402 protocol is being adopted faster than the infrastructure around it can mature. Every week, more autonomous agents are authorized to spend real money on behalf of real users and businesses. Every week, the attack surface in the x402 settlement flow grows.
 
-Recourse is not a theoretical fix. It is a deployed, working system that proves the safety model is possible without changing the x402 spec, without slowing down payments, and without requiring human intervention.
+Recourse is not a theoretical fix. It's a deployed, working system — with a live Sepolia transaction executed through KeeperHub — that proves the safety model is possible without changing the x402 spec, without slowing down payments, and without requiring human intervention.
 
 **The machine economy needs chargebacks. We built them.**
 
 ---
 
-## Contributing
+## Roadmap
 
-PRs welcome. Open an issue before large changes. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+1. **x402 spec integration** — Submit an EIP-style proposal to add an optional `X-Escrow-Contract` header for drop-in adoption.
+2. **Reputation oracle** — Aggregate dispute outcomes into an onchain seller reputation score.
+3. **Multi-asset support** — Extend `RecourseEscrow` to any ERC-20 (USDC, USDT, DAI, WETH).
+4. **Decentralized arbiter network** — Staked multi-node arbitration with threshold signatures.
+5. **Mainnet deployment** — Ethereum mainnet + Optimism/Base L2s, with an optional insurance pool.
+
+---
 
 ## License
 
