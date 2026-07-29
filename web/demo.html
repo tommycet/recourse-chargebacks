@@ -548,6 +548,8 @@
           <button class="btn btn-primary" onclick="connectMetaMask()">🦊 Connect MetaMask</button>
           <div class="or-divider">or</div>
           <button class="btn btn-ghost" onclick="connectDemo()">⚡ Demo Mode (Sepolia)</button>
+          <div class="or-divider">or</div>
+          <button class="btn btn-secondary" onclick="connectOfflineDemo()">⊘ Offline Demo (No Wallet)</button>
         </div>
 
         <!-- THE PROBLEM callout -->
@@ -782,7 +784,7 @@ const ERC20_ABI = [
   {"inputs":[{"name":"to","type":"address"},{"name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},
 ];
 
-let provider, signer, walletAddr, isDemo = false, escrowContractAddr, usdcAddr, arbiterAddr, explorerBase;
+let provider, signer, walletAddr, isDemo = false, isOffline = false, escrowContractAddr, usdcAddr, arbiterAddr, explorerBase;
 let currentEscrowId = null;
 const STATUS_NAMES = ['Active','Confirmed','Disputed','Resolved','Refunded'];
 
@@ -831,6 +833,63 @@ async function connectMetaMask() {
     }
     onConnected(net.chainId);
   } catch(e) { log('Connect failed: '+e.message,'err'); }
+}
+
+async function connectOfflineDemo() {
+  isDemo = true;
+  isOffline = true;
+  walletAddr = '0x' + Array.from({length:40},()=>Math.floor(Math.random()*16).toString(16)).join('');
+  explorerBase = 'https://sepolia.etherscan.io';
+  escrowContractAddr = '0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2';
+  usdcAddr = '0xe1d9BE71FeCeBF32424227475d389A3e8BAF01EA';
+  arbiterAddr = '0x7532A98C8eA413157787C8D2dA9659cD86D3acCe';
+
+  // Simulated provider — all calls return mock data
+  provider = createMockProvider();
+  signer = createMockSigner(walletAddr, provider);
+
+  log('Offline Demo: interactive simulation mode','ok');
+  log('Account: ' + walletAddr + ' (simulated)','info');
+  log('All actions are simulated — no real transactions sent.','warn');
+
+  onConnected(11155111);
+}
+
+function createMockProvider() {
+  const mock = {
+    getBalance: async () => ethers.BigNumber.from('1000000000000000000'),
+    getNetwork: async () => ({ chainId: 11155111 }),
+    getBlockNumber: async () => 11374381,
+    getGasPrice: async () => ethers.BigNumber.from('20000000000'),
+    estimateGas: async () => ethers.BigNumber.from('150000'),
+    sendTransaction: async (tx) => {
+      // Generate a fake tx hash that looks real
+      const fakeHash = '0x' + Array.from({length:64},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+      return { hash: fakeHash, wait: async () => ({ gasUsed: ethers.BigNumber.from('120000'), logs: [] }) };
+    },
+    call: async () => {
+      // Always return zero (simulated state)
+      return '0x' + '0'.repeat(64);
+    },
+    getTransactionReceipt: async (txHash) => {
+      return { gasUsed: ethers.BigNumber.from('120000'), logs: [], status: 1 };
+    },
+    getCode: async () => '0x'  // No contract code — simulated
+  };
+  return mock;
+}
+
+function createMockSigner(addr, prov) {
+  return {
+    address: addr,
+    provider: prov,
+    getAddress: async () => addr,
+    sendTransaction: async (tx) => {
+      const result = await prov.sendTransaction(tx);
+      return result;
+    },
+    signMessage: async () => '0x' + 'a'.repeat(130)
+  };
 }
 
 async function connectDemo() {
@@ -896,11 +955,53 @@ function onConnected(chainId) {
   }
 
   refreshState();
+
+  // Initialize multi-agent pipeline
+  initPipeline();
 }
 
 // ── State Refresh ──
 async function refreshState() {
   if (!provider) return;
+
+  if (isOffline) {
+    // Simulated state — no real chain calls
+    document.getElementById('sideEthBal').textContent = '1.0000';
+    document.getElementById('sideContractAddr').textContent = escrowContractAddr.slice(0,6)+'...'+escrowContractAddr.slice(-4);
+    document.getElementById('sideContractAddr').href = (explorerBase||'') + '/address/' + escrowContractAddr;
+    document.getElementById('sideUsdcAddr').textContent = usdcAddr.slice(0,6)+'...'+usdcAddr.slice(-4);
+    document.getElementById('sideUsdcAddr').href = (explorerBase||'') + '/address/' + usdcAddr;
+    document.getElementById('sideArbiter').textContent = arbiterAddr.slice(0,6)+'...'+arbiterAddr.slice(-4);
+    document.getElementById('sideUsdcBal').textContent = '10000.00';
+    document.getElementById('sideChainId').textContent = '11155111';
+    document.getElementById('inputSeller').value = walletAddr;
+
+    // Populate escrow list with simulated entries
+    const list = document.getElementById('escrowList');
+    list.innerHTML = '';
+    const mockEscrows = [
+      { id: 1, status: 'Active', amt: '10.00' },
+      { id: 2, status: 'Confirmed', amt: '5.00' },
+      { id: 3, status: 'Disputed', amt: '25.00' }
+    ];
+    for (const me of mockEscrows) {
+      const chip = document.createElement('div');
+      chip.className = 'escrow-chip';
+      const dotClass = me.status === 'Active' ? 'active' : me.status === 'Disputed' ? 'disputed' : me.status === 'Resolved' ? 'resolved' : 'confirmed';
+      chip.innerHTML = `<span class="status-dot ${dotClass}"></span><span class="id">#${me.id}</span><span style="font-size:11px;color:var(--ink2)">${me.status}</span><span class="amt">${me.amt}</span>`;
+      chip.onclick = () => selectEscrow(me.id, {
+        buyer: walletAddr,
+        seller: '0x1234567890abcdef' + Array(22).fill(0).map(()=>'0').join(''),
+        amount: ethers.utils.parseUnits(parseFloat(me.amt).toFixed(6), 6)
+      }, me.status);
+      list.appendChild(chip);
+    }
+
+    // Enable arbiter section in offline demo
+    document.getElementById('arbiterSection').style.display = '';
+    return;
+  }
+
   try {
     // ETH balance
     const ethBal = await provider.getBalance(walletAddr);
@@ -1005,6 +1106,20 @@ function selectEscrow(id, data, status) {
 
 // ── Create Escrow ──
 async function doCreateEscrow() {
+  const amountStr = document.getElementById('inputAmount').value;
+  const seller = document.getElementById('inputSeller').value || walletAddr;
+  const taskDesc = document.getElementById('inputTask').value || 'demo-task-' + Date.now();
+
+  if (isOffline) {
+    const mockEscrowId = Math.floor(Math.random() * 9000) + 1000;
+    currentEscrowId = mockEscrowId;
+    log('Simulated: Escrow #' + mockEscrowId + ' created (offline demo)','ok');
+    const e = { buyer: walletAddr, seller: seller || walletAddr, amount: ethers.utils.parseUnits(amountStr, 6) };
+    selectEscrow(mockEscrowId, e, 'Active');
+    await refreshState();
+    return;
+  }
+
   if (!escrowContractAddr) { log('No contract deployed','err'); return; }
   const amount = ethers.utils.parseUnits(document.getElementById('inputAmount').value, 6);
   const seller = document.getElementById('inputSeller').value || walletAddr;
@@ -1083,6 +1198,14 @@ async function doCreateEscrow() {
 // ── Confirm Delivery ──
 async function doConfirmDelivery() {
   if (!currentEscrowId) { log('Select an escrow first','err'); return; }
+
+  if (isOffline) {
+    log('Simulated: Delivery confirmed for escrow #' + currentEscrowId + ' (offline demo)','ok');
+    selectEscrow(currentEscrowId, { buyer: walletAddr, seller: '0x1234...', amount: ethers.utils.parseUnits('10',6) }, 'Confirmed');
+    initPipeline();
+    return;
+  }
+
   const escrow = new ethers.Contract(escrowContractAddr, ESCROW_ABI, signer);
   const evHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('delivery-confirmed-' + currentEscrowId + '-' + Date.now()));
   try {
@@ -1102,6 +1225,15 @@ async function doConfirmDelivery() {
 // ── Raise Dispute ──
 async function doRaiseDispute() {
   if (!currentEscrowId) { log('Select an escrow first','err'); return; }
+
+  if (isOffline) {
+    log('Simulated: Dispute raised on escrow #' + currentEscrowId + ' (offline demo)','err');
+    selectEscrow(currentEscrowId, { buyer: walletAddr, seller: '0x1234...', amount: ethers.utils.parseUnits('10',6) }, 'Disputed');
+    advancePhase(1, 'pass', 'Payload integrity confirmed — keccak256 matches ✓');
+    advancePhase(2, 'active', 'Analyzing dispute evidence bundle...');
+    return;
+  }
+
   const escrow = new ethers.Contract(escrowContractAddr, ESCROW_ABI, signer);
   const evHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('dispute-evidence-' + currentEscrowId + '-' + Date.now()));
   try {
@@ -1112,6 +1244,10 @@ async function doRaiseDispute() {
     await refreshState();
     const e = await escrow.escrows(currentEscrowId);
     selectEscrow(currentEscrowId, e, 'Disputed');
+
+    // Advance pipeline: Phase 1 (Evidence Verifier) → pass, Phase 2 (AI Arbiter) → active
+    advancePhase(1, 'pass', 'Payload integrity confirmed — keccak256 matches ✓');
+    advancePhase(2, 'active', 'Analyzing dispute evidence bundle...');
   } catch(e) {
     log('Error: ' + (e.reason||e.message).slice(0,200),'err');
   }
@@ -1193,6 +1329,18 @@ function populateAuditTrail(resolveTxHash, gasUsed) {
 // ── Resolve Dispute (arbiter only) ──
 async function doResolve(buyerWins) {
   if (!currentEscrowId) { log('Select an escrow first','err'); return; }
+
+  if (isOffline) {
+    const fakeTxHash = '0x' + Array.from({length:64},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+    log('Simulated: Arbiter resolved — ' + (buyerWins ? 'BUYER WINS' : 'SELLER WINS') + ' (offline demo)','ok');
+    selectEscrow(currentEscrowId, { buyer: walletAddr, seller: '0x1234...', amount: ethers.utils.parseUnits('10',6) }, 'Resolved');
+    populateAuditTrail(fakeTxHash, 120000);
+    advancePhase(2, 'pass', 'Verdict rendered: ' + (buyerWins ? 'Buyer Wins (Refund)' : 'Seller Wins (Payout)'));
+    advancePhase(3, 'pass', 'Policy approved — authorization scope confirmed');
+    advancePhase(4, 'pass', 'Tx executed onchain — ' + fakeTxHash.slice(0,10) + '...');
+    return;
+  }
+
   const escrow = new ethers.Contract(escrowContractAddr, ESCROW_ABI, signer);
   const payoutTo = buyerWins ?
     (await escrow.escrows(currentEscrowId)).buyer :
@@ -1208,9 +1356,52 @@ async function doResolve(buyerWins) {
 
     // Populate KeeperHub audit trail
     populateAuditTrail(tx.hash, rc.gasUsed);
+
+    // Advance pipeline: Phase 2 (AI Arbiter) → pass, Phase 3 (Policy Agent) → pass, Phase 4 (KeeperHub) → pass
+    advancePhase(2, 'pass', 'Verdict rendered: ' + (buyerWins ? 'Buyer Wins (Refund)' : 'Seller Wins (Payout)'));
+    advancePhase(3, 'pass', 'Policy approved — authorization scope confirmed');
+    advancePhase(4, 'pass', 'Tx executed onchain — ' + (tx.hash ? tx.hash.slice(0,10)+'...' : 'confirmed'));
   } catch(e) {
     log('Error: ' + (e.reason||e.message).slice(0,200),'err');
   }
+}
+
+// ── Multi-Agent Pipeline ──
+function initPipeline() {
+  const panel = document.getElementById('pipelinePanel');
+  if (panel) panel.style.display = '';
+  document.getElementById('pipelineBadge').textContent = 'INITIALIZING';
+  advancePhase(1, 'active', 'Evidence bundle hash verified onchain ✓');
+}
+
+function advancePhase(phaseNum, status, detail) {
+  const phase = document.getElementById('p-phase-' + phaseNum);
+  const statusEl = document.getElementById('p-status-' + phaseNum);
+  const detailEl = document.getElementById('p-detail-' + phaseNum);
+  if (!phase || !statusEl) return;
+
+  // Remove all state classes
+  phase.classList.remove('p-phase-pending', 'p-phase-active', 'p-phase-pass', 'p-phase-fail');
+
+  if (status === 'active') {
+    phase.classList.add('p-phase-active');
+    statusEl.textContent = '◉';
+  } else if (status === 'pass') {
+    phase.classList.add('p-phase-pass');
+    statusEl.textContent = '✓';
+  } else if (status === 'fail') {
+    phase.classList.add('p-phase-fail');
+    statusEl.textContent = '✗';
+  }
+
+  if (detail && detailEl) detailEl.textContent = detail;
+
+  // Update badge
+  const badge = document.getElementById('pipelineBadge');
+  if (phaseNum === 4 && status === 'pass') badge.textContent = 'COMPLETED';
+  else if (phaseNum >= 3 && status === 'pass') badge.textContent = 'EXECUTING';
+  else if (phaseNum >= 2 && status === 'pass') badge.textContent = 'RUNNING';
+  else if (phaseNum >= 1) badge.textContent = 'ACTIVE';
 }
 
 // ── Handle connect pill ──

@@ -1277,4 +1277,491 @@ contract RecourseEscrowTest is Test {
         vm.expectRevert("not arbiter");
         escrow.resolveDispute(id, true, buyer);
     }
+
+    // -------------------------------------------------------------------
+    // Extreme values — boundaries
+    // -------------------------------------------------------------------
+
+    function test_extremeValue_createEscrowWithMaxAmount() public {
+        // amount = type(uint256).max would require huge balance, so do a large
+        // but feasible value: 10 billion USDC at 6 decimals.
+        uint256 hugeAmt = 10_000_000_000e6;
+        usdc.mint(buyer, hugeAmt);
+        vm.prank(buyer);
+        uint256 id = escrow.createEscrow(buyer, seller, hugeAmt, TASK_ID, EVIDENCE);
+        assertEq(usdc.balanceOf(address(escrow)), hugeAmt, "huge amount escrowed");
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Active), "Active with huge amount");
+    }
+
+    function test_extremeValue_createEscrowWithAmountOneSucceeds() public {
+        // amount = 1 is the smallest legal amount (below it, zero reverts)
+        usdc.mint(buyer, 1);
+        vm.prank(buyer);
+        uint256 id = escrow.createEscrow(buyer, seller, 1, TASK_ID, EVIDENCE);
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Active), "Active at 1 wei");
+        assertEq(usdc.balanceOf(address(escrow)), 1, "escrow holds 1 unit");
+    }
+
+    function test_extremeValue_forceResolveOnNonExistentId() public {
+        // arbitrarily large escrow ID doesn't exist
+        vm.warp(block.timestamp + 100 days);
+        vm.expectRevert("no escrow");
+        escrow.forceResolve(type(uint256).max);
+    }
+
+    function test_extremeValue_autoRefundOnNonExistentId() public {
+        vm.expectRevert("not disputed");
+        escrow.autoRefund(42);
+    }
+
+    function test_extremeValue_resolveDisputeOnNonExistentId() public {
+        vm.prank(arbiter);
+        vm.expectRevert();
+        escrow.resolveDispute(42, true, buyer);
+    }
+
+    function test_extremeValue_confirmDeliveryOnNonExistentId() public {
+        // onlyBuyer modifier: escrows[42].buyer == address(0) != msg.sender
+        bool ok;
+        try escrow.confirmDelivery(42, EVIDENCE) {
+            ok = true;
+        } catch {
+            ok = false;
+        }
+        assertFalse(ok, "confirmDelivery on non-existent escrow must not succeed");
+    }
+
+    function test_extremeValue_raiseDisputeFromStrangerOnNonExistentEscrowReverts() public {
+        vm.prank(stranger);
+        vm.expectRevert("not buyer");
+        escrow.raiseDispute(42, EVIDENCE);
+    }
+
+    function test_extremeValue_nextIdMonotonicAcrossManyEscrows() public {
+        // confirm nextId increments exactly once per createEscrow call
+        for (uint i = 0; i < 5; i++) {
+            assertEq(escrow.nextId(), uint256(i + 1), "nextId BEFORE create");
+            _create();
+            assertEq(escrow.nextId(), uint256(i + 2), "nextId AFTER create");
+        }
+    }
+
+    function test_extremeValue_emptyByteHashesAccepted() public {
+        // bytes32(0) is a valid (if empty) hash; contract doesn't reject it
+        vm.prank(buyer);
+        uint256 id = escrow.createEscrow(buyer, seller, AMOUNT, bytes32(0), bytes32(0));
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Active), "Active with zero hashes");
+
+        vm.prank(buyer);
+        escrow.raiseDispute(id, bytes32(0));
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Disputed), "Disputed with zero hash");
+    }
+
+    function test_extremeValue_maxBytes32TaskIdAndEvidence() public {
+        bytes32 maxBytes = bytes32(type(uint256).max);
+        vm.prank(buyer);
+        uint256 id = escrow.createEscrow(buyer, seller, AMOUNT, maxBytes, maxBytes);
+        (, , , bytes32 t, bytes32 ev, , , , , , ) = escrow.escrows(id);
+        assertEq(t, maxBytes, "taskId == max bytes32");
+        assertEq(ev, maxBytes, "evidence == max bytes32");
+    }
+
+    // -------------------------------------------------------------------
+    // Multiple concurrent escrows — 5+ in one test
+    // -------------------------------------------------------------------
+
+    function test_multipleEscrows_fiveConcurrentStates() public {
+        // 5 escrows across 5 distinct states + actions
+        uint256 id1 = _create();            // Active
+        uint256 id2 = _createAndDispute();  // Disputed (will remain Disputed throughout)
+        uint256 id3 = _create();            // will confirm → Resolved
+        uint256 id4 = _createAndDispute();  // will resolve sellerWins → Resolved
+        uint256 id5 = _createAndDispute();  // will auto-refund (warp to 15 days)
+
+        vm.prank(buyer);
+        escrow.confirmDelivery(id3, keccak256("c3"));
+
+        vm.prank(arbiter);
+        escrow.resolveDispute(id4, false, seller);
+
+        // Check the non-time-dependent statuses BEFORE warping time forward
+        assertEq(uint(escrow.statusOf(id1)), uint(RecourseEscrow.Status.Active),  "id1 Active");
+        assertEq(uint(escrow.statusOf(id2)), uint(RecourseEscrow.Status.Disputed),"id2 Disputed");
+        assertEq(uint(escrow.statusOf(id3)), uint(RecourseEscrow.Status.Resolved), "id3 Resolved (confirmed delivery)");
+        assertEq(uint(escrow.statusOf(id4)), uint(RecourseEscrow.Status.Resolved), "id4 Resolved (seller wins)");
+
+        // Now warp forward to auto-refund id5; note id2 would also show Refunded after this,
+        // we don't re-check it.
+        vm.warp(block.timestamp + 15 days);
+        escrow.autoRefund(id5);
+        assertEq(uint(escrow.statusOf(id5)), uint(RecourseEscrow.Status.Resolved), "id5 Resolved (autoRefund)");
+    }
+
+    function test_multipleEscrows_singleResolutionDoesNotAffectOthers() public {
+        uint256 id1 = _createAndDispute();
+        uint256 id2 = _createAndDispute();
+        uint256 id3 = _createAndDispute();
+
+        // Resolve id1
+        vm.prank(arbiter);
+        escrow.resolveDispute(id1, true, buyer);
+
+        assertEq(uint(escrow.statusOf(id2)), uint(RecourseEscrow.Status.Disputed), "id2 still Disputed");
+        assertEq(uint(escrow.statusOf(id3)), uint(RecourseEscrow.Status.Disputed), "id3 still Disputed");
+    }
+
+    function test_multipleEscrows_dedicatedLargeBatch() public {
+        // 20 escrows created in a loop, half disputed, half resolved.
+        uint256[] memory ids = new uint256[](20);
+        for (uint i = 0; i < 20; i++) {
+            uint256 id = _create();
+            ids[i] = id;
+            if (i % 2 == 0) {
+                vm.prank(buyer);
+                escrow.raiseDispute(id, keccak256(abi.encode("d", i)));
+            } else {
+                vm.prank(buyer);
+                escrow.confirmDelivery(id, keccak256(abi.encode("c", i)));
+            }
+        }
+        // Confirm parity: index 0 = 0 (Disputed), index 1 = 1 (Resolved by delivery)
+        assertEq(uint(escrow.statusOf(ids[0])),  uint(RecourseEscrow.Status.Disputed), "id[0] Disputed");
+        assertEq(uint(escrow.statusOf(ids[1])),  uint(RecourseEscrow.Status.Resolved),  "id[1] Resolved");
+        // Resolved count = odd counts
+        uint256 huntedFunds = usdc.balanceOf(address(escrow));
+        assertEq(huntedFunds, 10 * AMOUNT, "10 disputed escrows hold funds");
+    }
+
+    // -------------------------------------------------------------------
+    // Arbiter reassignment edge cases (setArbiter to zero, then back)
+    // -------------------------------------------------------------------
+
+    function test_setArbiter_toZeroAddressRevertsThenEmitCheck() public {
+        // Attempt zero address (already tested, but let's sequence it).
+        vm.expectRevert("zero address");
+        escrow.setArbiter(address(0));
+
+        // Confirm nothing changed
+        assertEq(escrow.arbiter(), arbiter, "arbiter unchanged despite failure");
+    }
+
+    function test_setArbiter_toZeroThenStillRevertsForAllSetArbiterCalls() public {
+        // Cannot even set to a throwaway then to zero — zero always reverts
+        address newArb = address(0x1111);
+        escrow.setArbiter(newArb);
+        assertEq(escrow.arbiter(), newArb, "changed to 0x1111");
+
+        vm.expectRevert("zero address");
+        escrow.setArbiter(address(0));
+        assertEq(escrow.arbiter(), newArb, "arbiter still 0x1111");
+
+        // Now swap back to the original
+        escrow.setArbiter(arbiter);
+        assertEq(escrow.arbiter(), arbiter, "arbiter restored to original");
+    }
+
+    function test_setArbiter_toArbiterItselfAllowed() public {
+        // Setting arbiter to itself is a no-op but accepted
+        address old = escrow.arbiter();
+        escrow.setArbiter(arbiter);
+        assertEq(escrow.arbiter(), arbiter, "set to same value works");
+        assertEq(old, arbiter, "old == new");
+    }
+
+    // -------------------------------------------------------------------
+    // Fee precision — amounts where fee rounds to zero
+    // -------------------------------------------------------------------
+
+    function test_feePrecision_amountOne_roundsFeeToZero() public {
+        usdc.mint(buyer, 1);
+        vm.prank(buyer);
+        uint256 id = escrow.createEscrow(buyer, seller, 1, TASK_ID, EVIDENCE);
+        uint256 ownerBefore = usdc.balanceOf(owner);
+
+        vm.prank(buyer);
+        escrow.confirmDelivery(id, EVIDENCE);
+
+        // fee = 1 * 100 / 10000 = 0
+        assertEq(usdc.balanceOf(owner), ownerBefore, "fee zero on 1 unit");
+        assertEq(usdc.balanceOf(seller), 1, "seller gets full 1 unit (no fee)");
+        assertEq(usdc.balanceOf(address(escrow)), 0, "escrow drained");
+    }
+
+    function test_feePrecision_amount2_feeRoundsToZero() public {
+        // fee = 2 * 100 / 10000 = 0.02 rounds to 0 in integer division
+        usdc.mint(buyer, 2);
+        vm.prank(buyer);
+        uint256 id = escrow.createEscrow(buyer, seller, 2, TASK_ID, EVIDENCE);
+        uint256 ownerBefore = usdc.balanceOf(owner);
+
+        vm.prank(buyer);
+        escrow.confirmDelivery(id, EVIDENCE);
+
+        assertEq(usdc.balanceOf(owner), ownerBefore, "fee zero on 2 units");
+        assertEq(usdc.balanceOf(seller), 2, "seller gets full 2 units");
+    }
+
+    function test_feePrecision_amount99_feeRoundsToZero() public {
+        // 99 * 100 / 10000 = 0.99 → truncates to 0
+        usdc.mint(buyer, 99);
+        vm.prank(buyer);
+        uint256 id = escrow.createEscrow(buyer, seller, 99, TASK_ID, EVIDENCE);
+        uint256 ownerBefore = usdc.balanceOf(owner);
+
+        vm.prank(buyer);
+        escrow.confirmDelivery(id, EVIDENCE);
+
+        assertEq(usdc.balanceOf(owner), ownerBefore, "fee zero on 99 units");
+        assertEq(usdc.balanceOf(seller), 99, "seller gets full 99 units");
+    }
+
+    function test_feePrecision_amount100_feeIsExactlyOne() public {
+        // 100 * 100 / 10000 = 1 (first non-zero fee)
+        usdc.mint(buyer, 100);
+        vm.prank(buyer);
+        uint256 id = escrow.createEscrow(buyer, seller, 100, TASK_ID, EVIDENCE);
+        uint256 ownerBefore = usdc.balanceOf(owner);
+
+        vm.prank(buyer);
+        escrow.confirmDelivery(id, EVIDENCE);
+
+        assertEq(usdc.balanceOf(owner), ownerBefore + 1, "fee = 1 on 100 units");
+        assertEq(usdc.balanceOf(seller), 99, "seller gets 99 units");
+    }
+
+    function test_feePrecision_amount3_feeIsZero() public {
+        // Explicit test for floor behavior with 3 wei
+        usdc.mint(buyer, 3);
+        vm.prank(buyer);
+        uint256 id = escrow.createEscrow(buyer, seller, 3, TASK_ID, EVIDENCE);
+
+        vm.prank(buyer);
+        escrow.confirmDelivery(id, EVIDENCE);
+
+        // 3 → fee = floor(0.03) = 0, seller gets 3
+        assertEq(usdc.balanceOf(address(escrow)), 0, "escrow drained");
+        assertEq(usdc.balanceOf(seller), 3, "seller gets 3 units");
+    }
+
+    function test_feePrecision_resolveDisputeWithSmallAmountNoFee() public {
+        // fee rounds to zero in resolveDispute path too
+        usdc.mint(buyer, 99);
+        vm.prank(buyer);
+        uint256 id = escrow.createEscrow(buyer, seller, 99, TASK_ID, EVIDENCE);
+        vm.prank(buyer);
+        escrow.raiseDispute(id, keccak256("d"));
+
+        uint256 ownerBefore = usdc.balanceOf(owner);
+        uint256 buyerBefore = usdc.balanceOf(buyer);
+
+        vm.prank(arbiter);
+        escrow.resolveDispute(id, true, buyer);
+
+        // fee = floor(0.99) = 0, buyer gets 99
+        assertEq(usdc.balanceOf(owner), ownerBefore, "no fee");
+        assertEq(usdc.balanceOf(buyer), buyerBefore + 99, "buyer refunded 99");
+    }
+
+    // -------------------------------------------------------------------
+    // State machine — every transition path between states
+    // (Created→Active → Paid → Confirmed/Resolved → Disputed → Resolved → Refunded)
+    // -------------------------------------------------------------------
+
+    function test_stateMachine_createdToActiveOnCreate() public {
+        // After creation, status is Active
+        uint256 id = _create();
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Active), "Active");
+        // funds escrowed
+        assertEq(usdc.balanceOf(address(escrow)), AMOUNT, "funds held");
+    }
+
+    function test_stateMachine_activeToResolvedViaConfirmDelivery() public {
+        // Active → (confirmDelivery) → Resolved
+        uint256 id = _create();
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Active), "Active");
+
+        vm.prank(buyer);
+        escrow.confirmDelivery(id, keccak256("ev"));
+        // confirmDelivery sets delivered + resolved, so we go directly to Resolved
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved after confirm delivery");
+    }
+
+    function test_stateMachine_activeToDisputedViaRaiseDispute() public {
+        // Active → Disputed
+        uint256 id = _create();
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Active), "Active");
+
+        vm.prank(buyer);
+        escrow.raiseDispute(id, keccak256("d"));
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Disputed), "Disputed");
+    }
+
+    function test_stateMachine_disputedToResolvedViaArbiterBuyerWins() public {
+        // Disputed → Resolved (buyer wins)
+        uint256 id = _createAndDispute();
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Disputed), "Disputed");
+
+        vm.prank(arbiter);
+        escrow.resolveDispute(id, true, buyer);
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved (buyer wins)");
+    }
+
+    function test_stateMachine_disputedToResolvedViaArbiterSellerWins() public {
+        // Disputed → Resolved (seller wins)
+        uint256 id = _createAndDispute();
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Disputed), "Disputed");
+
+        vm.prank(arbiter);
+        escrow.resolveDispute(id, false, seller);
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved (seller wins)");
+    }
+
+    function test_stateMachine_disputedToResolvedViaForceResolve() public {
+        // Disputed → Resolved via forceResolve after DISPUTE_EXPIRY (7 days)
+        uint256 id = _createAndDispute();
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Disputed), "Disputed");
+
+        vm.warp(block.timestamp + 7 days + 1);
+        escrow.forceResolve(id);
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved via forceResolve");
+    }
+
+    function test_stateMachine_disputedToResolvedViaAutoRefundAfterTimeout() public {
+        // Disputed → statusOf shows Refunded, autoRefund → Resolved
+        uint256 id = _createAndDispute();
+        vm.warp(block.timestamp + 14 days + 1);
+        // statusOf should return Refunded (value 4) once past TIMEOUT
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Refunded), "statusOf = Refunded");
+
+        // autoRefund actually transitions to Resolved
+        escrow.autoRefund(id);
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved via autoRefund");
+    }
+
+    function test_stateMachine_noTransitionFromResolved() public {
+        // From Resolved (via confirmDelivery, never disputed), only "disputed-required" functions
+        // can be exercised because the disputed flag was never set.
+        uint256 id = _create();
+        vm.prank(buyer);
+        escrow.confirmDelivery(id, EVIDENCE);
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved");
+
+        // Cannot raise dispute (already resolved → not Active/Confirmed in statusOf)
+        vm.prank(buyer);
+        vm.expectRevert("not in progress");
+        escrow.raiseDispute(id, keccak256("d"));
+
+        // Cannot confirm again (onlyBuyer passes but disputed/resolved check fires)
+        vm.prank(buyer);
+        vm.expectRevert("disputed/resolved");
+        escrow.confirmDelivery(id, EVIDENCE);
+
+        // Cannot autoRefund (was never disputed)
+        vm.warp(block.timestamp + 30 days);
+        vm.expectRevert("not disputed");
+        escrow.autoRefund(id);
+
+        // Cannot forceResolve (was never disputed)
+        vm.expectRevert("not disputed");
+        escrow.forceResolve(id);
+    }
+
+    function test_stateMachine_noTransitionFromResolvedDisputedPath() public {
+        // From Resolved (via resolveDispute after raiseDispute), the disputed flag IS set,
+        // so the "already resolved" guard fires for forceResolve and autoRefund.
+        uint256 id = _createAndDispute();
+        vm.prank(arbiter);
+        escrow.resolveDispute(id, true, buyer);
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved");
+
+        // Cannot raise dispute (already Disputed → not in progress)
+        vm.prank(buyer);
+        vm.expectRevert("not in progress");
+        escrow.raiseDispute(id, keccak256("d"));
+
+        // Cannot force-resolve (already resolved)
+        vm.warp(block.timestamp + 10 days);
+        vm.expectRevert("already resolved");
+        escrow.forceResolve(id);
+
+        // Cannot auto-refund again (already resolved)
+        vm.warp(block.timestamp + 30 days);
+        vm.expectRevert("already resolved");
+        escrow.autoRefund(id);
+
+        // Arbiter cannot resolve again (already resolved)
+        vm.prank(arbiter);
+        vm.expectRevert("already resolved");
+        escrow.resolveDispute(id, true, buyer);
+    }
+
+    function test_stateMachine_cannotSkipToResolveFromActive() public {
+        // From Active directly, can arbitration happen? No — must be Disputed first.
+        uint256 id = _create();
+        vm.prank(arbiter);
+        vm.expectRevert("not disputed");
+        escrow.resolveDispute(id, true, buyer);
+    }
+
+    function test_stateMachine_cannotAutoRefundFromActiveDirectly() public {
+        // from Active, autoRefund reverts (not disputed)
+        uint256 id = _create();
+        vm.warp(block.timestamp + 30 days);
+        vm.expectRevert("not disputed");
+        escrow.autoRefund(id);
+    }
+
+    function test_stateMachine_autoRefundAlreadyResolvedGivesAlreadyResolved() public {
+        // Once an escrow has been disputed+resolved, autoRefund returns "already resolved"
+        // (this exercises a different state path from a confirmDelivery-resolved escrow).
+        uint256 id = _createAndDispute();
+        vm.prank(arbiter);
+        escrow.resolveDispute(id, true, buyer);
+
+        vm.warp(block.timestamp + 30 days);
+        vm.expectRevert("already resolved");
+        escrow.autoRefund(id);
+    }
+
+    function test_stateMachine_cannotForceResolveFromActiveDirectly() public {
+        // From Active, forceResolve reverts (not disputed)
+        uint256 id = _create();
+        vm.warp(block.timestamp + 30 days);
+        vm.expectRevert("not disputed");
+        escrow.forceResolve(id);
+    }
+
+    function test_stateMachine_fullLifecycle_BuyPath() public {
+        // end-to-end happy path: create → active → dispute → arbiter resolves (buyer wins)
+        uint256 id = _create();
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Active), "Active");
+
+        vm.prank(buyer);
+        escrow.raiseDispute(id, keccak256("d-lifecycle"));
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Disputed), "Disputed");
+
+        vm.prank(arbiter);
+        escrow.resolveDispute(id, true, buyer);
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved (buyer wins)");
+
+        // Funds all drained
+        assertEq(usdc.balanceOf(address(escrow)), 0, "fully drained at end");
+    }
+
+    function test_stateMachine_fullLifecycle_SellerPath() public {
+        // end-to-end happy path: create → active → dispute → arbiter resolves (seller wins)
+        uint256 id = _create();
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Active), "Active");
+
+        vm.prank(buyer);
+        escrow.raiseDispute(id, keccak256("d-seller-lifecycle"));
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Disputed), "Disputed");
+
+        vm.prank(arbiter);
+        escrow.resolveDispute(id, false, seller);
+        assertEq(uint(escrow.statusOf(id)), uint(RecourseEscrow.Status.Resolved), "Resolved (seller wins)");
+
+        // Seller got the net payout
+        assertEq(usdc.balanceOf(address(escrow)), 0, "fully drained at end");
+    }
 }
