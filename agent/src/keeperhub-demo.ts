@@ -3,6 +3,14 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { writeFile } from "node:fs/promises";
+import {
+  verifyEvidence,
+  type EvidenceBundle,
+} from "./evidence-verifier-agent.ts";
+import {
+  reviewArbiterDecision,
+  type PolicyReview,
+} from "./arbiter-policy-agent.ts";
 import { runKeeperHubArbiter, type DisputeInput } from "./keeperhub-arbiter.ts";
 
 function keccak256hex(data: string): string {
