@@ -67,6 +67,47 @@ async function demo() {
   console.log(`             Response hash ${responseHash.slice(0, 18)}...`);
   console.log(`             (different hashes = delivery failure)\n`);
 
+  // ═══════════════════════════════════════════════════════════
+  // 4-PHASE MULTI-AGENT PIPELINE
+  // Phase 1: Evidence Verification
+  // Phase 2: AI Arbiter
+  // Phase 3: Policy Review
+  // Phase 4: KeeperHub Execution
+  // ═══════════════════════════════════════════════════════════
+
+  const evidenceBundle: EvidenceBundle = {
+    requestHash: input.requestHash,
+    responseHash: input.responseHash,
+    deliveryStatus: input.deliveryStatus,
+    buyerAddr: input.buyerAddr,
+    sellerAddr: input.sellerAddr,
+  };
+
+  // ═══ PHASE 1: Evidence Verification ═══
+  console.log("\n╔══════════════════════════════════════════════════════════════╗");
+  console.log("║  Phase 1: Evidence Verification (Agent 1)                  ║");
+  console.log("╚══════════════════════════════════════════════════════════════╝");
+  const evidenceReport = verifyEvidence(evidenceBundle);
+  for (const check of evidenceReport.checks) {
+    console.log(`  ${check.passed ? "✅" : "❌"} ${check.name}: ${check.detail}`);
+  }
+  console.log(`  Result: ${evidenceReport.passed ? "PASS" : "FAIL"} — ${evidenceReport.summary}`);
+
+  if (!evidenceReport.passed) {
+    console.log("\n  ⛔ Evidence verification failed — pipeline halted.");
+    const failOutput = {
+      timestamp: new Date().toISOString(),
+      project: "Recourse",
+      hackathon: "KeeperHub - Agents Onchain",
+      pipeline: { phase1: evidenceReport, error: "Evidence verification failed" },
+    };
+    await writeFile(
+      new URL("./keeperhub-demo-output.json", import.meta.url),
+      JSON.stringify(failOutput, null, 2),
+    );
+    return failOutput;
+  }
+
   // Run the full pipeline: AI verdict → KeeperHub simulation → onchain execution
   const result = await runKeeperHubArbiter(input);
 

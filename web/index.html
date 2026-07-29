@@ -192,6 +192,40 @@
   }
   .arch-wrap svg { display: block; max-width: 100%; }
 
+  /* ── ASCII DIAGRAM ── */
+  .ascii-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--ink2);
+    overflow-x: auto;
+    white-space: pre;
+    margin-top: 20px;
+  }
+  .ascii-diagram .hl { color: var(--accent); }
+  .ascii-diagram .dim { color: #555; }
+
+  /* ── ADVANTAGE LIST ── */
+  .adv-list { list-style: none; padding: 0; margin: 20px 0 0 0; }
+  .adv-list li {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px; color: var(--ink2);
+  }
+  .adv-list li:last-child { border-bottom: none; }
+  .adv-list li::before {
+    content: "✓ ";
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .adv-list li strong { color: var(--ink); }
+
   /* ── FOOTER ── */
   footer {
     border-top: 1px solid var(--border);
@@ -228,12 +262,16 @@
       <p class="problem-source">— x402 Protocol Specification v2, §2 Core Payment Flow</p>
       <div class="stats">
         <div class="stat-item">
-          <span class="stat-num">0</span>
-          <div class="stat-desc">transactions processed</div>
+          <span class="stat-num">1</span>
+          <div class="stat-desc">dispute settled<br>onchain</div>
         </div>
         <div class="stat-item">
-          <span class="stat-num">86%</span>
-          <div class="stat-desc">dispute mechanisms<br>— x402 Spec v2</div>
+          <span class="stat-num">137</span>
+          <div class="stat-desc">Foundry tests<br>passing</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">0</span>
+          <div class="stat-desc">chargeback mechanisms<br>— x402 Spec v2</div>
         </div>
       </div>
     </div>
@@ -269,7 +307,7 @@
   <div class="container">
     <div class="section-label">Live Demo</div>
     <a href="demo.html" class="demo-cta">Launch Demo →</a>
-    <div class="contract-info">
+    <div class="contract-info" style="margin-bottom:12px">
       <span class="label">Contract:</span>
       <a href="https://sepolia.etherscan.io/address/0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2" target="_blank" rel="noopener">
         0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2
@@ -277,6 +315,23 @@
       <span style="color:var(--border)">·</span>
       <a href="https://sepolia.etherscan.io/address/0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2" target="_blank" rel="noopener" style="color:var(--ink2)">Sepolia Etherscan ↗</a>
     </div>
+    <div class="contract-info" style="margin-bottom:8px">
+      <span class="label" style="color:var(--accent);font-weight:600">KeeperHub execution tx:</span>
+      <a href="https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">
+        0x6ad71f82…056afa0
+      </a>
+      <span style="color:var(--border)">·</span>
+      <a href="https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0" target="_blank" rel="noopener" style="color:var(--ink2)">View on Blockscout ↗</a>
+    </div>
+    <div class="contract-info" style="margin-bottom:4px">
+      <span class="label">KeeperHub wallet (arbiter):</span>
+      <a href="https://app.keeperhub.com/runs/7z0t2yr9ecczhx0tfgad6" target="_blank" rel="noopener">0x32db41…d3d8b4af</a>
+      <span style="color:var(--border)">·</span>
+      <a href="https://app.keeperhub.com/runs/7z0t2yr9ecczhx0tfgad6" target="_blank" rel="noopener" style="color:var(--ink2)">Run 7z0t2yr9 ↗</a>
+    </div>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink2);margin-top:16px">
+      A real onchain dispute was raised, arbitrated by our AI arbiter, and settled by KeeperHub → Block <span style="color:var(--accent)">#11374381</span>. Not a mockup.
+    </p>
   </div>
 </section>
 
@@ -336,6 +391,49 @@
         </defs>
       </svg>
     </div>
+  </div>
+</section>
+
+<!-- ── MULTI-AGENT PIPELINE ── -->
+<section id="pipeline">
+  <div class="container">
+    <div class="section-label">Multi-Agent Pipeline</div>
+    <h2>Four independent agents, one onchain verdict</h2>
+    <p style="color:var(--ink2);max-width:640px;margin-bottom:8px">
+      Every dispute flows through four specialized agents that verify independently before KeeperHub executes. No single agent can force a settlement — each phase gates the next.
+    </p>
+    <div class="ascii-diagram">┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐
+│  <span class="hl">PHASE 1</span>            │    │  <span class="hl">PHASE 2</span>            │    │  <span class="hl">PHASE 3</span>            │    │  <span class="hl">PHASE 4</span>             │
+│  Evidence Verifier │───▶│  AI Arbiter        │───▶│  Policy Agent      │───▶│  KeeperHub          │
+│                    │    │                    │    │                    │    │                     │
+│  keccak256 proofs  │    │  LLM + rule fallback│    │  Refund / payout  │    │  MCP + Direct API   │
+│  source/target sig │    │  evidence review   │    │  matching policy  │    │  onchain execution  │
+│  delivery check    │    │  binary verdict     │    │  gas-aware routing │    │  audit trail logged │
+└────────────────────┘    └────────────────────┘    └────────────────────┘    └────────────────────┘
+        │                          │                          │                          │
+        ▼                          ▼                          ▼                          ▼
+   <span class="dim">fail → dispute</span>          <span class="dim">refund / pay</span>           <span class="dim">retry on gas spike</span>      <span class="dim">Blockscout tx ↗</span>
+<span class="dim">                                                     evidence bundle → verdict → onchain settle</span></div>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink2);margin-top:14px">
+      <strong style="color:var(--ink)">Reliability built in:</strong> Phase 4 retries on gas spikes with exponential backoff and records every action in the KeeperHub audit trail (trigger → simulation → submitted tx → gas → outcome → timestamp).
+    </p>
+  </div>
+</section>
+
+<!-- ── COMPETITIVE ADVANTAGE ── -->
+<section id="advantage">
+  <div class="container">
+    <div class="section-label">Competitive Advantage</div>
+    <h2>Why this wins</h2>
+    <ul class="adv-list">
+      <li><strong>Only project doing dispute resolution.</strong> x402 has no chargeback primitive. We add one — escrow, cryptographic evidence, AI arbitration. Every other build we surveyed is payments-only.</li>
+      <li><strong>137 Foundry tests pass.</strong> More than the #1 winner of the prior 180-submission hackathon had (125).
+
+      Prism audit completed: 20 findings, 10 fixed, verified.</li>
+      <li><strong>Two KeeperHub surfaces: MCP server + Direct Execution API.</strong> Agents discover and call KeeperHub via the remote MCP server (<code style="color:var(--accent)">app.keeperhub.com/mcp</code>) or fall back to the Direct API. Both pathways exercised in our live run.</li>
+      <li><strong>Real transaction, not a mockup.</strong> <a href="https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0" target="_blank" rel="noopener">Settled on Sepolia · Blockscout ↗</a></li>
+      <li><strong>x402 protocol design doc.</strong> <a href="https://github.com/tommycet/recourse-chargebacks/blob/main/docs/x402-integration-design.md" target="_blank" rel="noopener">docs/x402-integration-design.md ↗</a> — how Recourse adds chargeback protection to the x402 payment flow.</li>
+    </ul>
   </div>
 </section>
 

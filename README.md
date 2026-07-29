@@ -122,7 +122,7 @@ Full integration guide: [`docs/keeperhub-integration.md`](docs/keeperhub-integra
                                     no
                                     │
                                     ▼
-                              openDispute()
+                              raiseDispute()
                                     │
                        evidence bundles (onchain hashes)
                                     │
@@ -143,7 +143,7 @@ Full integration guide: [`docs/keeperhub-integration.md`](docs/keeperhub-integra
 
 1. **Agent initiates payment** — Buyer agent sends x402 payment. Funds deposit into `RecourseEscrow`, not directly to seller.
 2. **Seller delivers (or doesn't)** — Seller submits a signed evidence bundle (request hash + response hash + delivery attestation), committed as `bytes32` onchain.
-3. **Buyer verifies** — If delivery confirmed, buyer calls `confirmDelivery()` → funds release immediately. If not, buyer calls `openDispute()` within the challenge window.
+3. **Buyer verifies** — If delivery confirmed, buyer calls `confirmDelivery()` → funds release immediately. If not, buyer calls `raiseDispute()` within the challenge window.
 4. **Arbiter resolves** — AI arbiter evaluates both bundles, verifies onchain hashes, scores delivery quality, issues verdict. KeeperHub executes `resolveDispute()` onchain. **Under 60 seconds.**
 
 ---
@@ -190,7 +190,7 @@ See also our [x402 Protocol Integration Design](docs/x402-integration-design.md)
 
 | Layer | Technology |
 |-------|------------|
-| **Smart Contracts** | Solidity 0.8.20 + Foundry — 89/89 tests passing |
+| **Smart Contracts** | Solidity 0.8.20 + Foundry — 137/137 tests passing |
 | **Execution Layer** | KeeperHub MCP Server + Direct Execution API (dual-surface, auto-failover) |
 | **Evidence Bundles** | `keccak256` + ABI encoding, committed onchain |
 | **Arbiter** | TypeScript + LLM evaluation (rule-based fallback) |
@@ -227,7 +227,7 @@ git clone https://github.com/tommycet/recourse-chargebacks
 cd recourse
 forge install
 forge build
-forge test -vv    # 89/89 pass
+forge test -vv    # 137/137 pass
 ```
 
 ### Run the KeeperHub Demo
@@ -275,7 +275,7 @@ Verify on Blockscout: [tx `0x6ad71f82…`](https://eth-sepolia.blockscout.com/tx
 recourse/
 ├── contracts/
 │   ├── src/RecourseEscrow.sol            — escrow + dispute state machine
-│   └── test/RecourseEscrow.t.sol         — 89 Foundry tests
+│   └── test/RecourseEscrow.t.sol         — 137 Foundry tests
 ├── middleware/src/
 │   ├── evidenceBundle.ts                 — cryptographic evidence spec
 │   ├── evidenceVerifier.ts               — hash verification
