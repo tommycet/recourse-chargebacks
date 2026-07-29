@@ -195,7 +195,7 @@ See also our [x402 Protocol Integration Design](docs/x402-integration-design.md)
 | **Evidence Bundles** | `keccak256` + ABI encoding, committed onchain |
 | **Arbiter** | TypeScript + LLM evaluation (rule-based fallback) |
 | **Wallet** | KeeperHub agentic wallet (EIP-7702 smart account, Turnkey enclave — no plaintext key) |
-| **Payment** | x402 on Base USDC |
+| **Payment** | x402 with onchain escrow (Sepolia USDC) |
 | **Demo UI** | HTML/CSS + ethers.js (connects to Sepolia) |
 | **Network** | Ethereum Sepolia (live contracts) |
 
