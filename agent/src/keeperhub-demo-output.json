@@ -18,10 +18,12 @@
   "verdict": {
     "buyerWins": true,
     "confidence": 0.9,
-    "reasoning": "AI arbiter determined non-delivery based on evidence bundle hash mismatch. Rule-based fallback: deliveryStatus=failed → buyer wins (refund)."
+    "reasoning": "Arbiter evaluated evidence: deliveryStatus=failed with evidence bundle hash mismatch. Rule-based decision engine (LLM enhancement optional via OPENROUTER_API_KEY) determined buyer wins — non-delivery → refund."
   },
   "execution": {
-    "txHash": null,
+    "txHash": "0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0",
+    "txBlock": 11374381,
+    "blockscoutUrl": "https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0",
     "keeperHubExecutionId": "7z0t2yr9ecczhx0tfgad6",
     "keeperHubStatus": "completed",
     "keeperHubAuditUrl": "https://app.keeperhub.com/runs/7z0t2yr9ecczhx0tfgad6",

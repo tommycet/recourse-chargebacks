@@ -32,7 +32,7 @@ Recourse closes the gap with four layers:
 
 3. **AI arbiter** — The arbiter evaluates evidence against the service contract and issues a verdict (buyerWins/sellerWins) in seconds.
 
-4. **KeeperHub execution layer** — The arbiter's verdict triggers a KeeperHub webhook workflow that executes `resolveDispute()` onchain. KeeperHub handles gas estimation, retries, MEV protection, and produces a full audit trail (trigger → simulation → tx hash → gas used → outcome).
+4. **KeeperHub execution layer** — The arbiter's verdict triggers a KeeperHub Direct Execution API call that executes `resolveDispute()` onchain. KeeperHub handles gas, nonce management, and produces an audit trail (trigger → execution ID → tx hash → confirmation).
 
 This is exactly the "last mile" KeeperHub solves: the agent decides, KeeperHub acts.
 
@@ -61,7 +61,7 @@ The entire onchain execution path routes through KeeperHub:
 | Layer | Technology |
 |-------|------------|
 | **Smart Contracts** | Solidity 0.8.20 + Foundry — 28/28 tests |
-| **Execution Layer** | KeeperHub (webhook trigger → web3/write-contract) |
+| **Execution Layer** | KeeperHub Direct Execution API (contract-call → resolveDispute) |
 | **Evidence Bundles** | `keccak256` + ABI encoding, committed onchain |
 | **Arbiter** | TypeScript + LLM evaluation (rule-based fallback) |
 | **Wallet** | KeeperHub agentic wallet (Turnkey enclave, no plaintext key) |
@@ -83,7 +83,7 @@ The entire onchain execution path routes through KeeperHub:
 | Criterion | Status |
 |-----------|--------|
 | Executes onchain via KeeperHub | ✅ [`0x6ad71f82...`](https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0) — block 11374381, `resolveDispute(3)` via KeeperHub |
-| Uses KeeperHub surfaces | ✅ MCP server, webhook trigger, web3/read-contract + write-contract, audit trail |
+| Uses KeeperHub surfaces | ✅ Direct Execution API (contract-call), web3/read-contract + write-contract, audit trail |
 | Reliability + observability | ✅ Condition node guards, KeeperHub audit trail, retry on gas spike |
 | Originality + real-world usefulness | ✅ Addresses documented gap in x402 (§2), first working implementation |
 | Integration quality + DX | ✅ Drop-in `keeperhub-arbiter.ts`, clean evidence bundle spec, 28-test Foundry suite |
