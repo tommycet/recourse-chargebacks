@@ -84,7 +84,7 @@ The entire onchain execution path routes through KeeperHub:
 |-----------|--------|
 | Executes onchain via KeeperHub | ✅ [`0x6ad71f82...`](https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0) — block 11374381, `resolveDispute(3)` via KeeperHub |
 | Uses KeeperHub surfaces | ✅ Direct Execution API (contract-call), web3/read-contract + write-contract, audit trail |
-| Reliability + observability | ✅ Condition node guards, KeeperHub audit trail, retry on gas spike |
+| Reliability + observability | ✅ Retry with exponential backoff (2s/4s/8s) on transient failures (429, gas spikes, 5xx), simulate-then-execute safety gate, KeeperHub audit trail (execution ID + tx hash + run URL), 28/28 Foundry tests |
 | Originality + real-world usefulness | ✅ Addresses documented gap in x402 (§2), first working implementation |
 | Integration quality + DX | ✅ Drop-in `keeperhub-arbiter.ts`, clean evidence bundle spec, 28-test Foundry suite |
 
