@@ -14,7 +14,7 @@
 
 Our AI arbiter evaluated a dispute and executed the resolution **through KeeperHub** — a real signed transaction on Sepolia, not a mockup.
 
-| | |
+| Field | Value |
 |---|---|
 | **Tx Hash** | `0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0` |
 | **Blockscout** | [→ view transaction](https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0) |
