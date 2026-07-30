@@ -143,9 +143,22 @@ contract MaliciousERC20 is MockUSDC {
     }
 }
 
+// ===========================================================================
+// RecourseEscrow Test Suite — 137 tests across 8 categories
+// ===========================================================================
+//
+//   §1  Core State Machine      — happy paths & state transitions        (L190-488)
+//   §2  Edge Cases              — events, timestamps, allowance/balance  (L490-1015)
+//   §3  Evidence & Immutability — hash storage, USDC immutability         (L1016-1118)
+//   §4  Reentrancy              — ERC777-style attack prevention         (L1119-1186)
+//   §5  Malicious Actor Tests   — seller/buyer permission attack vectors  (L1187-1280)
+//   §6  Extreme Value Tests     — boundary amounts, zero/non-existent IDs (L1281-1370)
+//   §7  Multiple Escrows        — independence, batches, fee accumulation  (L1371-1468)
+//   §8  Fee Precision           — integer division truncation boundaries   (L1469-1568)
+//   §9  State Machine Coverage  — every transition path, nil-potent        (L1569-1767)
+//
 // ---------------------------------------------------------------------------
-// Test suite for the real RecourseEscrow (with 1% fee, forceResolve, setArbiter)
-// ---------------------------------------------------------------------------
+// ===========================================================================
 contract RecourseEscrowTest is Test {
     RecourseEscrow escrow;
     MockUSDC usdc;
@@ -488,7 +501,8 @@ contract RecourseEscrowTest is Test {
     }
 
     // ===================================================================
-    // EDGE-CASE TESTS — targeting production-grade coverage (29–58+)
+    // §2 EDGE-CASE TESTS — events, timestamps, allowance/balance, 
+    //     additional state transition coverage (tests 29-58+)
     // ===================================================================
 
     // -------------------------------------------------------------------

@@ -198,9 +198,11 @@ recourse/
 
 ## Demo Video
 
+> **DoraHacks requires:** *"A short demo video showing your agent executing onchain through KeeperHub."*
+
 **File:** `demo-video-final-v2.mp4` (72 seconds, 1.9 MB)
 
-The demo shows the full pipeline: buyer creates escrow → seller fails to deliver → buyer opens dispute → AI arbiter evaluates evidence → verdict issued → KeeperHub executes `resolveDispute()` onchain → buyer refunded.
+The demo shows our **agent executing onchain through KeeperHub**: buyer creates escrow → seller fails to deliver → buyer opens dispute → AI arbiter evaluates evidence → verdict issued → **KeeperHub executes `resolveDispute()` onchain** → `Resolved` event emitted → buyer refunded. The KeeperHub execution is visible in the demo at the tx hash `0x6ad71f82…` (block 11,374,381 on Sepolia).
 
 ---
 
