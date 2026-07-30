@@ -506,7 +506,7 @@ contract RecourseEscrowTest is Test {
     // ===================================================================
 
     // -------------------------------------------------------------------
-    // createEscrow — additional edge cases
+    // §2 createEscrow — additional edge cases
     // -------------------------------------------------------------------
 
     function test_createEscrow_emitsCorrectEvent() public {
@@ -563,7 +563,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // confirmDelivery — additional state transition + emission tests
+    // §2 confirmDelivery — additional state transition + emission tests
     // -------------------------------------------------------------------
 
     function test_confirmDelivery_emitsResolvedEvent() public {
@@ -609,7 +609,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // raiseDispute — edge cases
+    // §2 raiseDispute — edge cases
     // -------------------------------------------------------------------
 
     function test_raiseDispute_emitsDisputeRaisedEvent() public {
@@ -648,7 +648,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // resolveDispute — additional edge cases
+    // §2 resolveDispute — additional edge cases
     // -------------------------------------------------------------------
 
     function test_resolveDispute_notDisputedReverts() public {
@@ -701,7 +701,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // autoRefund — edge cases
+    // §2 autoRefund — edge cases
     // -------------------------------------------------------------------
 
     function test_autoRefund_canBeCalledByAnyone() public {
@@ -742,7 +742,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // forceResolve — additional edge cases
+    // §2 forceResolve — additional edge cases
     // -------------------------------------------------------------------
 
     function test_forceResolve_canBeCalledByBuyer() public {
