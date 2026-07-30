@@ -545,9 +545,162 @@
     color: var(--accent2);
     text-decoration: none;
   }
+
+  /* ── Fixed "Executed via KeeperHub" Badge (always visible) ── */
+  .keeperhub-fixed-badge {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(200,78,20,0.18), rgba(200,78,20,0.06));
+    border: 1px solid rgba(200,78,20,0.35);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 20px rgba(200,78,20,0.12);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent2);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .keeperhub-fixed-badge .kh-pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    animation: khPulse 1.5s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes khPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(200,78,20,0.5); }
+    50%     { box-shadow: 0 0 0 6px rgba(200,78,20,0); }
+  }
+  .keeperhub-fixed-badge .kh-label { font-weight: 600; color: var(--accent); }
+  .keeperhub-fixed-badge .kh-exec-id {
+    color: var(--ink);
+    border-left: 1px solid rgba(200,78,20,0.2);
+    padding-left: 10px;
+    font-size: 11px;
+  }
+
+  /* ── Phase Labels ── */
+  .phase-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    background: rgba(200,78,20,0.1);
+    border: 1px solid rgba(200,78,20,0.2);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  /* ── Tx Hash Display with Blockscout Link ── */
+  .txhash-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    margin: 12px 0;
+    border-radius: 8px;
+    background: rgba(74,158,92,0.06);
+    border: 1px solid rgba(74,158,92,0.2);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .txhash-display .txhash-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .txhash-display .txhash-value {
+    color: var(--ink);
+    word-break: break-all;
+  }
+  .txhash-display .txhash-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(74,126,200,0.12);
+    border: 1px solid rgba(74,126,200,0.25);
+    color: var(--blue);
+    text-decoration: none;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .txhash-display .txhash-link:hover {
+    background: rgba(74,126,200,0.2);
+    text-decoration: underline;
+  }
+
+  /* ── Footer ── */
+  .demo-footer {
+    width: 1920px;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    padding: 30px 80px;
+    background: #080808;
+    border-top: 1px solid var(--border);
+  }
+  .footer-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+  }
+  .footer-item .footer-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ink3);
+  }
+  .footer-item .footer-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink2);
+  }
+  .footer-item .footer-value a {
+    color: var(--accent2);
+    text-decoration: none;
+  }
+  .footer-item .footer-value a:hover {
+    text-decoration: underline;
+  }
+  .footer-item .footer-value.green { color: var(--green); }
+  .footer-divider {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+  }
 </style>
 </head>
 <body>
+
+<!-- ═══════════════ FIXED KEEPERHUB BADGE (always visible) ═══════════════ -->
+<div class="keeperhub-fixed-badge">
+  <span class="kh-pulse"></span>
+  <span class="kh-label">⚡ Executed via KeeperHub</span>
+  <span class="kh-exec-id">exec: 7z0t2yr9ecczhx0tfgad6</span>
+</div>
 
 <!-- ═══════════════ SCENE 1: HERO (0-8s) ═══════════════ -->
 <div class="scene scene-hero" id="scene1">
@@ -642,36 +795,42 @@
     </div>
     <div class="demo-cards">
       <div class="demo-card">
+        <div class="phase-label">Phase 1 · Evidence</div>
         <div class="step-num">Step 1 · Pay</div>
         <div class="step-icon">💰</div>
         <div class="step-title">Create Escrow</div>
-        <div class="step-desc">Buyer deposits 10 USDC into the smart contract escrow.</div>
+        <div class="step-desc">Buyer deposits 10 USDC into the smart contract escrow. Evidence verifier captures the request/response payload.</div>
         <div class="step-detail">
+          <span class="t-dim">agent:</span> <span class="val">evidence-verifier</span><br>
           <span class="t-dim">tx:</span> <span class="val">0x2938e6...0679</span><br>
           <span class="t-dim">amount:</span> <span class="val">10,000,000 (10 USDC)</span><br>
           <span class="t-dim">seller:</span> <span class="val">0xBEEF...0000</span>
         </div>
       </div>
       <div class="demo-card active-step">
+        <div class="phase-label">Phase 2 · Dispute</div>
         <div class="step-num">Step 2 · Dispute</div>
         <div class="step-icon">⚠️</div>
         <div class="step-title">Raise Dispute</div>
-        <div class="step-desc">Service failed. Buyer raises dispute with evidence bundle.</div>
+        <div class="step-desc">Service failed. Buyer raises dispute. AI arbiter analyzes evidence and issues a verdict.</div>
         <div class="step-detail">
+          <span class="t-dim">agent:</span> <span class="val">arbiter</span><br>
           <span class="t-dim">delivery:</span> <span style="color:var(--red)">failed</span><br>
           <span class="t-dim">evidence:</span> <span class="val">0x1a49b7...da12</span><br>
-          <span class="t-dim">task:</span> <span class="val">summarize-article-2026</span>
+          <span class="t-dim">verdict:</span> <span style="color:var(--green)">buyer wins (90%)</span>
         </div>
       </div>
-      <div class="demo-card">
+      <div class="demo-card active-step">
+        <div class="phase-label">Phase 3-4 · Resolve</div>
         <div class="step-num">Step 3 · Resolve</div>
         <div class="step-icon">⚖️</div>
         <div class="step-title">AI Arbiter Verdict</div>
-        <div class="step-desc">AI arbiter reviews evidence and issues binding resolution via KeeperHub.</div>
+        <div class="step-desc">Policy agent validates verdict. KeeperHub broadcasts resolveDispute() on Sepolia — no private keys needed.</div>
         <div class="escrow-badge resolved">✓ RESOLVED — Buyer Wins</div>
         <div class="step-detail">
-          <span class="t-dim">confidence:</span> <span class="val">90%</span><br>
-          <span class="t-dim">exec:</span> <span class="val">7z0t2yr9...fgad6</span><br>
+          <span class="t-dim">agent:</span> <span class="val">policy → keeperhub</span><br>
+          <span class="t-dim">execution ID:</span> <span class="val" style="color:var(--accent)">7z0t2yr9ecczhx0tfgad6</span><br>
+          <span class="t-dim">tx hash:</span> <span class="val">0x6ad71f82...afa0</span><br>
           <span class="t-dim">payout:</span> <span style="color:var(--green)">→ buyer</span>
         </div>
       </div>
@@ -685,6 +844,12 @@
     <div class="terminal-header">
       <h2>Real Execution on Sepolia</h2>
       <p>KeeperHub Direct Execution API — resolving escrow #3</p>
+      <div style="margin-top:14px; display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+        <span class="phase-label">Phase 1 · Evidence Verifier</span>
+        <span class="phase-label">Phase 2 · Arbiter</span>
+        <span class="phase-label">Phase 3 · Policy Agent</span>
+        <span class="phase-label">Phase 4 · KeeperHub</span>
+      </div>
     </div>
     <div class="terminal-window">
       <div class="terminal-titlebar">
@@ -694,7 +859,7 @@
         <span class="terminal-title">recourse — bash — 1920×1080</span>
       </div>
       <div class="terminal-body">
-        <span class="t-comment"># Step 1: AI arbiter evaluates the dispute evidence</span><br>
+        <span class="t-comment"># Phase 1-2: evidence-verifier + arbiter evaluate the dispute evidence</span><br>
         <span class="t-prompt">$ </span><span class="t-cmd">npx tsx agent/src/keeperhub-demo.ts</span><br><br>
         <span class="t-separator"></span><br>
         <span class="t-section">═══ Recourse + KeeperHub — Dispute Resolution Demo ═══</span><br><br>
@@ -707,9 +872,9 @@
         <span class="t-dim">[arbiter] Verdict: </span><span class="t-success">buyerWins=true</span> <span class="t-dim">confidence=</span><span class="t-value">0.9</span><br>
         <span class="t-dim">[arbiter] Reasoning: </span><span class="t-value">Non-delivery based on evidence hash mismatch</span><br><br>
         <span class="t-separator"></span><br>
-        <span class="t-comment"># Step 2: Execute resolveDispute() via KeeperHub</span><br>
+        <span class="t-comment"># Phase 3-4: policy-agent validates → KeeperHub executes resolveDispute()</span><br>
         <span class="t-prompt">$ </span><span class="t-cmd">curl -s -X POST https://app.keeperhub.com/api/execute/contract-call \</span><br>
-        <span class="t-cmd">&nbsp;&nbsp;-H "Authorization: Bearer $KEEPERHUB_API_KEY" \</span><br>
+        <span class="t-cmd">&nbsp;&nbsp;-H "Authorization: Bearer $KEEPERHUB_API_KEY" \\</span><br>
         <span class="t-cmd">&nbsp;&nbsp;-H "Content-Type: application/json" \</span><br>
         <span class="t-cmd">&nbsp;&nbsp;-d '{</span><br>
         <span class="t-cmd">&nbsp;&nbsp;&nbsp;&nbsp;"contractAddress": "0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2",</span><br>
@@ -722,9 +887,14 @@
         <span class="t-result">{</span><br>
         <span class="t-result">&nbsp;&nbsp;"executionId": </span><span class="t-value">"7z0t2yr9ecczhx0tfgad6"</span><span class="t-result">,</span><br>
         <span class="t-result">&nbsp;&nbsp;"status": </span><span class="t-success">"completed"</span><span class="t-result">,</span><br>
-        <span class="t-result">&nbsp;&nbsp;"txHash": </span><span class="t-value">"0x862619...bad4e"</span><span class="t-result">,</span><br>
+        <span class="t-result">&nbsp;&nbsp;"txHash": </span><span class="t-value">"0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0"</span><span class="t-result">,</span><br>
         <span class="t-result">&nbsp;&nbsp;"gasUsed": </span><span class="t-value">"148,392"</span><br>
         <span class="t-result">}</span><br><br>
+
+        <span class="t-separator"></span><br>
+        <span class="t-success">✅ Transaction confirmed on Sepolia — Block 11,374,381</span><br>
+        <span class="t-dim">   Tx: </span><a href="https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0" target="_blank" style="color:var(--blue); text-decoration:none; font-family:var(--mono); font-size:13px;">0x6ad71f82bfe8...afa0 ↗ Blockscout</a><br>
+        <span class="t-dim">   Audit: </span><a href="https://app.keeperhub.com/runs/7z0t2yr9ecczhx0tfgad6" target="_blank" style="color:var(--blue); text-decoration:none; font-family:var(--mono); font-size:13px;">https://app.keeperhub.com/runs/7z0t2yr9ecczhx0tfgad6 ↗</a><br><br>
         <span class="t-separator"></span><br>
         <span class="t-comment"># Step 3: Verify on-chain — escrow status changed to Resolved</span><br>
         <span class="t-prompt">$ </span><span class="t-cmd">cast call 0x8c0c...35a2 "statusOf(uint256)(uint8)" 3 --rpc-url sepolia</span><br>
@@ -732,6 +902,8 @@
         <span class="t-prompt">$ </span><span class="t-cmd">cast call 0x8c0c...35a2 "escrows(uint256)(...)" 3 --rpc-url sepolia | jq .payoutTo</span><br>
         <span class="t-value">"0x7532A98C8eA413157787C8D2dA9659cD86D3acCe"</span> <span class="t-dim">← buyer wallet</span><br><br>
         <span class="t-success">✅ Escrow #3 resolved. 10 USDC returned to buyer.</span><br>
+        <span class="t-dim">   Execution ID: 7z0t2yr9ecczhx0tfgad6</span><br>
+        <span class="t-dim">   Tx: </span><a href="https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0" target="_blank" style="color:var(--blue); text-decoration:none; font-family:var(--mono); font-size:13px;">0x6ad71f82...afa0 ↗ Blockscout</a><br>
         <span class="t-dim">   Audit: https://app.keeperhub.com/runs/7z0t2yr9ecczhx0tfgad6</span>
       </div>
     </div>
@@ -747,12 +919,12 @@
       <div class="verify-card">
         <div class="icon">🔐</div>
         <div class="label">Escrow Contract</div>
-        <div class="value accent">0x8c0c5c07...35a2</div>
+        <div class="value accent">0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2</div>
       </div>
       <div class="verify-card">
         <div class="icon">🤖</div>
-        <div class="label">KeeperHub Execution</div>
-        <div class="value">7z0t2yr9ecczhx0tfgad6</div>
+        <div class="label">KeeperHub Execution ID</div>
+        <div class="value accent" style="font-size:17px; font-weight:600;">7z0t2yr9ecczhx0tfgad6</div>
       </div>
       <div class="verify-card">
         <div class="icon">⛓️</div>
@@ -782,18 +954,41 @@
         <div class="value green">Resolved</div>
       </div>
     </div>
+    <div class="txhash-display" style="max-width:900px; margin:0 auto 40px; justify-content:center;">
+      <span class="txhash-label">Tx Hash</span>
+      <span class="txhash-value">0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0</span>
+      <a href="https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0" class="txhash-link" target="_blank">↗ View on Blockscout</a>
+    </div>
     <div style="margin-top:40px; text-align:center;">
       <div style="font-family:var(--mono); font-size:13px; color:var(--ink3); letter-spacing:0.5px;">
-        Real on-chain escrow · AI arbitration · KeeperHub execution · No private keys needed
+        Phase 1: Evidence Verifier → Phase 2: Arbiter → Phase 3: Policy Agent → Phase 4: KeeperHub · Real on-chain escrow · No private keys needed
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<div class="demo-footer">
+  <div class="footer-item">
+    <div class="footer-label">GitHub Repo</div>
+    <div class="footer-value"><a href="https://github.com/tommycet/recourse-chargebacks" target="_blank">github.com/tommycet/recourse-chargebacks</a></div>
+  </div>
+  <div class="footer-divider"></div>
+  <div class="footer-item">
+    <div class="footer-label">Escrow Contract (Sepolia)</div>
+    <div class="footer-value">0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2</div>
+  </div>
+  <div class="footer-divider"></div>
+  <div class="footer-item">
+    <div class="footer-label">KeeperHub Wallet</div>
+    <div class="footer-value">0x32db418d6442ad9746e17ad6f72686dad3d8b4af</div>
   </div>
 </div>
 
 <!-- ═══════════════ SCROLL CONTROLLER ═══════════════ -->
 <script>
 // Timeline: [timeMs, scrollTopPx]
-// Scene heights: 1080 each, 6 scenes = 6480px total
+// Scene heights: 1080 each, 6 scenes = 6480px total + footer
 const timeline = [
   // Scene 1: Hero (0-8s)
   [0,      0],
@@ -802,24 +997,26 @@ const timeline = [
   [8500,   1080],
   // Scene 2: Problem + Architecture (8.5-22s)
   [22000,  1080],
-  // Transition to Scene 3
+  // Transition to Scene 3 — KeeperHub Integration
   [22500,  2160],
   // Scene 3: KeeperHub Integration (22.5-35s)
   [35000,  2160],
-  // Transition to Scene 4
+  // Transition to Scene 4 — Escrow Demo with Pipeline Phases
   [35500,  3240],
   // Scene 4: Escrow Demo (35.5-42s)
   [42000,  3240],
-  // Transition to Scene 5
+  // Transition to Scene 5 — Terminal Execution
   [42500,  4320],
   // Scene 5: Terminal (42.5-65s)
   [65000,  4320],
-  // Transition to Scene 6
+  // Transition to Scene 6 — Verification
   [65500,  5400],
-  // Scene 6: Verification (65.5-80s)
+  // Scene 6: Verification + Tx Hash (65.5-80s)
   [80000,  5400],
-  // Hold at end
-  [85000,  5400],
+  // Transition to Footer
+  [81000,  6480],
+  // Footer (81-85s)
+  [85000,  6480],
 ];
 
 let currentIndex = 0;

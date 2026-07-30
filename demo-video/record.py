@@ -1,4 +1,16 @@
-"""Record the Recourse demo video using Playwright sync API."""
+"""Record the Recourse demo video using Playwright sync API.
+
+The recording page (demo-video/recording-page.html) contains a self-scrolling
+timeline that walks through 6 scenes showing the full multi-agent pipeline:
+  Phase 1: Evidence Verifier → Phase 2: Arbiter → Phase 3: Policy Agent → Phase 4: KeeperHub
+
+A fixed badge ("⚡ Executed via KeeperHub — exec: 7z0t2yr9ecczhx0tfgad6")
+stays pinned top-right throughout the recording, ensuring judges always see the
+KeeperHub execution context. The terminal scene shows the real tx hash
+(0x6ad71f82...) with a Blockscout link, and the final scene displays it in a
+prominent tx-hash bar. The footer shows the GitHub repo, contract address,
+and KeeperHub wallet address.
+"""
 import time
 import glob
 import shutil
@@ -24,9 +36,9 @@ with sync_playwright() as pw:
     # The scroll controller in the HTML handles all scrolling automatically
     # We just need to wait long enough for the full timeline (85s) + buffer
     print(f"Recording started at {time.strftime('%H:%M:%S')}")
-    print("Scroll controller is running... waiting 88 seconds")
+    print("Scroll controller is running... 6 scenes + footer over 88 seconds")
 
-    time.sleep(88)  # 85s timeline + 3s buffer
+    time.sleep(88)  # 85s timeline (6 scenes + footer) + 3s buffer
 
     print(f"Recording ended at {time.strftime('%H:%M:%S')}")
 

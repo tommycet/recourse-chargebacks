@@ -681,6 +681,23 @@
     <h2>HTTP 402 → Escrow → Delivery → Settlement</h2>
     <p class="desc">Each step is backed by on-chain state. The buyer agent never loses custody of funds until delivery is confirmed.</p>
 
+    <!-- Interception Point Callout -->
+    <div class="reveal" style="margin-bottom:32px;padding:20px 24px;background:linear-gradient(135deg,rgba(200,78,20,0.10),rgba(200,78,20,0.03));border:1px solid rgba(200,78,20,0.3);border-left:4px solid var(--accent);border-radius:var(--radius)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);padding:3px 10px;background:var(--accent-dim);border:1px solid rgba(200,78,20,0.3);border-radius:4px">⚡ Interception Point</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--ink2)">Step 02 → Step 03</span>
+      </div>
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:10px;color:var(--ink)">Recourse intercepts between the 402 response and the payment authorization</h3>
+      <p style="font-size:13.5px;color:var(--ink2);line-height:1.7;margin-bottom:14px">
+        In standard x402, the buyer receives the 402 Payment Required response and sends a payment signature directly to the seller — funds leave the buyer's wallet immediately, with no recourse.
+        <strong style="color:var(--accent)">Recourse breaks that flow.</strong> Between receiving the 402 and authorizing payment, Recourse creates an on-chain escrow instead. USDC is locked in a smart contract, not sent to the seller. Funds move only after delivery is confirmed — or after the 4-agent pipeline resolves a dispute.
+      </p>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink3)">
+        <div><span style="color:var(--red)">✗ Standard:</span> 402 Response → Buyer signs payment → Seller gets funds</div>
+        <div><span style="color:var(--green)">✓ Recourse:</span> 402 Response → <strong style="color:var(--accent)">Escrow created</strong> → Seller gets escrow proof → Delivery confirmed → Escrow releases</div>
+      </div>
+    </div>
+
     <div class="reveal">
       <div class="timeline" id="flowTimeline">
         <!-- Step 1 -->
@@ -717,15 +734,16 @@
 }</span></div>
         </div>
 
-        <!-- Step 3 -->
-        <div class="timeline-step" id="step-3">
+        <!-- Step 3 — INTERCEPTION POINT -->
+        <div class="timeline-step" id="step-3" style="position:relative">
+          <div style="position:absolute;left:-32px;top:-2px;font-family:var(--mono);font-size:8px;font-weight:700;color:var(--accent);writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:2px;opacity:0.7;text-transform:uppercase">⚡ Intercept</div>
           <div class="tl-dot"></div>
           <div class="tl-header">
-            <span class="tl-num">03</span>
-            <h4>Recourse intercepts: creates escrow</h4>
+            <span class="tl-num" style="color:var(--accent)">03</span>
+            <h4>⚡ Recourse intercepts: creates escrow instead of authorizing payment</h4>
             <span class="tl-status pending" id="status-3">WAITING</span>
           </div>
-          <div class="tl-body">Instead of paying directly, the Recourse client creates a <code>RecourseEscrow</code> on Sepolia. USDC is approved and locked in the contract — not sent to the seller.</div>
+          <div class="tl-body"><strong style="color:var(--accent)">This is the interception point.</strong> Instead of signing a payment and sending funds directly to the seller (standard x402), the Recourse client creates a <code>RecourseEscrow</code> on Sepolia. USDC is approved and locked in the contract — not sent to the seller. The buyer retains custody until delivery is confirmed.</div>
           <div class="tl-http"><span class="hl">RecourseClient.payWithRecourse()</span>
 
 <span class="hdr">→</span> USDC.approve(<span class="val">escrowAddr</span>, <span class="num">1000000</span>)
@@ -954,7 +972,8 @@ Escrow.<span class="str">resolveDispute</span>(42, <span class="num">true</span>
 <footer>
   <p>Built for <a href="https://dorahacks.io" target="_blank" rel="noopener">DoraHacks</a> Agents Onchain Hackathon · KeeperHub-powered</p>
   <div class="links">
-    <a href="demo.html">Live Demo</a>
+    <a href="index.html">Home</a>
+    <a href="demo.html">Escrow Demo</a>
     <a href="x402-demo.html">x402 Flow</a>
     <a href="https://github.com/tommycet/recourse-chargebacks" target="_blank" rel="noopener">GitHub</a>
     <a href="https://github.com/tommycet/recourse-chargebacks/blob/main/docs/x402-integration-design.md" target="_blank" rel="noopener">x402 Design Doc</a>
