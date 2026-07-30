@@ -46,6 +46,8 @@
       radial-gradient(ellipse 500px 500px at 85% 80%, rgba(74,126,200,0.03) 0%, transparent 70%);
   }
   .app { position:relative; z-index:1; display:grid; grid-template-columns:260px 1fr 340px; grid-template-rows:auto 1fr; height:100vh; }
+  .app.connect-only { grid-template-columns:1fr; }
+  #connectScreen { grid-column:1/-1; width:100%; }
 
   /* ── Top Nav ── */
   .nav { grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; padding:0 28px; height:56px;
@@ -659,7 +661,7 @@
 </style>
 </head>
 <body>
-<div class="app" id="app">
+<div class="app connect-only" id="app">
   <!-- Top Nav -->
   <nav class="nav">
     <div class="nav-brand">
@@ -1234,6 +1236,7 @@ function onConnected(chainId) {
   document.getElementById('workspace').style.display = '';
   document.getElementById('sidebar').style.display = '';
   document.getElementById('logPanel').style.display = '';
+  document.getElementById('app').classList.remove('connect-only');
 
   const dot = document.getElementById('chainDot');
   dot.classList.add('on');
