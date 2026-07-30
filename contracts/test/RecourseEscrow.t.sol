@@ -187,7 +187,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // Helper
+    // §1 Helper
     // -----------------------------------------------------------------------
     function _create() internal returns (uint256 id) {
         vm.prank(buyer);
@@ -201,7 +201,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // createEscrow
+    // §1 createEscrow — happy path & core validation
     // -----------------------------------------------------------------------
     function test_createEscrow_happy() public {
         uint256 buyerBefore = usdc.balanceOf(buyer);
@@ -1131,11 +1131,12 @@ contract RecourseEscrowTest is Test {
     }
 
     // ===================================================================
-    // BATCH 3 — REENTRANCY, SECURITY, EDGE CASES (tests 90–125+)
+    // §4 REENTRANCY TESTS — ERC777-style callback attacks on 
+    //     resolveDispute and autoRefund (tests 90-125+)
     // ===================================================================
 
     // -------------------------------------------------------------------
-    // Reentrancy: MaliciousERC20 that calls back into resolveDispute
+    // §4cont REENTRANCY: MaliciousERC20 that calls back into resolveDispute
     // -------------------------------------------------------------------
 
     function test_reentrancy_resolveDispute_preventedByChecksEffectsInteractions() public {
@@ -1199,7 +1200,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // Malicious seller: confirms with wrong hash, disputes after delivery
+    // §5 MALICIOUS SELLER: confirms with wrong hash, disputes after delivery
     // -------------------------------------------------------------------
 
     function test_maliciousSeller_cannotConfirmDelivery() public {
@@ -1243,7 +1244,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // Malicious buyer: disputes before delivery, double-dispute pattern
+    // §5 MALICIOUS BUYER: disputes before delivery, double-dispute pattern
     // -------------------------------------------------------------------
 
     function test_maliciousBuyer_disputeBeforeDeliveryIsAllowed() public {
@@ -1293,7 +1294,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // Extreme values — boundaries
+    // §6 EXTREME VALUES — boundary amounts, zero/non-existent IDs
     // -------------------------------------------------------------------
 
     function test_extremeValue_createEscrowWithMaxAmount() public {
@@ -1381,7 +1382,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // Multiple concurrent escrows — 5+ in one test
+    // §7 MULTIPLE CONCURRENT ESCROWS — 5+ in one test
     // -------------------------------------------------------------------
 
     function test_multipleEscrows_fiveConcurrentStates() public {
@@ -1447,7 +1448,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // Arbiter reassignment edge cases (setArbiter to zero, then back)
+    // §7cont ARBITER REASSIGNMENT — edge cases (setArbiter to zero, then back)
     // -------------------------------------------------------------------
 
     function test_setArbiter_toZeroAddressRevertsThenEmitCheck() public {
@@ -1483,7 +1484,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // Fee precision — amounts where fee rounds to zero
+    // §8 FEE PRECISION — amounts where fee rounds to zero
     // -------------------------------------------------------------------
 
     function test_feePrecision_amountOne_roundsFeeToZero() public {
@@ -1577,7 +1578,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -------------------------------------------------------------------
-    // State machine — every transition path between states
+    // §9 STATE MACHINE — every transition path between states
     // (Created→Active → Paid → Confirmed/Resolved → Disputed → Resolved → Refunded)
     // -------------------------------------------------------------------
 
