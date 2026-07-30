@@ -8,15 +8,17 @@
 <style>
   :root {
     --bg: #050505;
-    --surface: rgba(18,18,18,0.85);
-    --surface2: rgba(26,26,26,0.9);
+    --bg2: #0a0a0a;
+    --surface: #111;
+    --surface2: #161616;
     --glass: rgba(255,255,255,0.03);
     --glass-border: rgba(255,255,255,0.06);
     --ink: #f0ede6;
     --ink2: #8a8578;
     --ink3: #5a5548;
     --accent: #c84e14;
-    --accent-glow: rgba(200,78,20,0.15);
+    --accent-dim: rgba(200,78,20,0.15);
+    --accent-glow: rgba(200,78,20,0.08);
     --accent2: #e8a065;
     --green: #4a9e5c;
     --green-bg: rgba(74,158,92,0.1);
@@ -35,7 +37,7 @@
     --backdrop: blur(20px) saturate(1.2);
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  html { font-size: 14px; }
+  html { font-size: 15px; }
   body { background: var(--bg); color: var(--ink); font-family: var(--sans); min-height:100vh; overflow-x:hidden; }
   body::before {
     content:''; position:fixed; top:0; left:0; right:0; bottom:0; z-index:0; pointer-events:none;
