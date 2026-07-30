@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recourse x402 — Chargeback Protection for Agent Payments</title>
+<meta name="description" content="Interactive demonstration of Recourse's x402 integration: escrow-backed payments with dispute resolution for AI agents.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050505;
+    --bg2: #0a0a0a;
+    --accent: #c84e14;
+    --accent-dim: rgba(200,78,20,0.15);
+    --accent-glow: rgba(200,78,20,0.08);
+    --ink: #f0ede6;
+    --ink2: #8a8578;
+    --ink3: #5a5548;
+    --surface: #111;
+    --surface2: #161616;
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.10);
+    --green: #4a9e5c;
+    --green-bg: rgba(74,158,92,0.10);
+    --red: #c84e4e;
+    --red-bg: rgba(200,78,78,0.10);
+    --blue: #4a7ec8;
+    --blue-bg: rgba(74,126,200,0.10);
+    --radius: 12px;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Inter', -apple-system, system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 15px; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Background glow ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 700px 500px at 10% 15%, rgba(200,78,20,0.04) 0%, transparent 70%),
+      radial-gradient(ellipse 500px 500px at 90% 85%, rgba(74,126,200,0.025) 0%, transparent 70%);
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+  a { color: var(--accent); text-decoration: none; transition: color 0.15s; }
+  a:hover { color: #e06030; }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid var(--border);
+    background: rgba(5,5,5,0.88);
+    backdrop-filter: blur(20px) saturate(1.2);
+  }
+  nav .inner {
+    max-width: 960px; margin: 0 auto; padding: 0 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    height: 54px;
+  }
+  nav .brand {
+    font-family: var(--mono); color: var(--accent);
+    font-size: 14px; font-weight: 700;
+    letter-spacing: 0.10em; text-transform: uppercase;
+    text-decoration: none;
+  }
+  nav .links { display: flex; gap: 20px; align-items: center; }
+  nav .links a {
+    font-size: 12.5px; color: var(--ink2);
+    letter-spacing: 0.02em; transition: color 0.15s;
+  }
+  nav .links a:hover { color: var(--ink); text-decoration: none; }
+  nav .links a.cta {
+    color: var(--accent); border: 1px solid var(--accent);
+    padding: 5px 14px; border-radius: 6px; font-family: var(--mono);
+    font-weight: 500; font-size: 11.5px; letter-spacing: 0.04em;
+  }
+  nav .links a.cta:hover { background: var(--accent-dim); text-decoration: none; }
+
+  /* ── HERO ── */
+  .hero { padding: 88px 0 60px; text-align: center; }
+  .hero .eyebrow {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.16em;
+    color: var(--accent); margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.03em; margin-bottom: 18px;
+    max-width: 700px; margin-left: auto; margin-right: auto;
+  }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .subtitle {
+    font-size: 16px; color: var(--ink2); max-width: 560px;
+    line-height: 1.65; margin: 0 auto 28px;
+  }
+  .hero .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    padding: 12px 28px; border-radius: 8px;
+    letter-spacing: 0.03em; transition: all 0.15s;
+    text-decoration: none; cursor: pointer; border: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #d95a1e; color: #fff; text-decoration: none; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost {
+    border: 1px solid var(--border2); color: var(--ink2); background: transparent;
+  }
+  .btn-ghost:hover { border-color: var(--ink2); color: var(--ink); text-decoration: none; }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover:not(:disabled) { background: #55b068; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-red:hover:not(:disabled) { background: #d45c5c; }
+  .btn-sm { padding: 8px 18px; font-size: 12px; }
+
+  /* ── SECTION COMMON ── */
+  section {
+    padding: 64px 0;
+    border-top: 1px solid var(--border);
+    position: relative; z-index: 1;
+  }
+  .section-label {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--accent); margin-bottom: 14px;
+  }
+  section h2 {
+    font-size: 1.5rem; font-weight: 700;
+    letter-spacing: -0.02em; margin-bottom: 14px;
+    line-height: 1.25;
+  }
+  section .desc {
+    font-size: 14.5px; color: var(--ink2); line-height: 1.65;
+    max-width: 600px; margin-bottom: 32px;
+  }
+
+  /* ── SCROLL REVEAL ── */
+  .reveal {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+  .reveal-delay-5 { transition-delay: 0.5s; }
+  .reveal-delay-6 { transition-delay: 0.6s; }
+
+  /* ── PROBLEM CALLOUT ── */
+  .problem-callout {
+    padding: 18px 22px;
+    background: rgba(200,78,20,0.07);
+    border: 1px solid rgba(200,78,20,0.25);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    margin-bottom: 40px;
+  }
+  .problem-callout .callout-label {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .problem-callout blockquote {
+    font-size: 13.5px; line-height: 1.7; color: var(--ink2);
+    font-style: italic; margin-bottom: 6px;
+  }
+  .problem-callout .callout-source {
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink3);
+  }
+
+  /* ── COMPARISON COLUMNS ── */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 680px) {
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+  .compare-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .compare-card.danger { border-color: rgba(200,78,78,0.25); }
+  .compare-card.success { border-color: rgba(74,158,92,0.25); }
+  .compare-card .tag {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .compare-card.danger .tag { color: var(--red); }
+  .compare-card.success .tag { color: var(--green); }
+  .compare-card h3 {
+    font-size: 15px; font-weight: 700; margin-bottom: 14px;
+    line-height: 1.3;
+  }
+  .compare-card .code-block {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 11px; line-height: 1.55;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--ink2);
+  }
+  .compare-card .code-block .kw { color: var(--accent); }
+  .compare-card .code-block .str { color: var(--green); }
+  .compare-card .code-block .num { color: var(--blue); }
+  .compare-card .code-block .cmt { color: var(--ink3); font-style: italic; }
+  .compare-card .code-block .hl { color: var(--ink); font-weight: 600; }
+
+  /* ── TIMELINE ── */
+  .timeline {
+    position: relative;
+    padding-left: 40px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-step {
+    position: relative;
+    margin-bottom: 0;
+    padding: 0 0 0 28px;
+    padding-bottom: 28px;
+  }
+  .timeline-step:last-child { padding-bottom: 0; }
+  .timeline-step .tl-dot {
+    position: absolute;
+    left: -20px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--border2);
+    z-index: 2;
+    transition: all 0.4s ease;
+  }
+  .timeline-step.active .tl-dot {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(200,78,20,0.4);
+  }
+  .timeline-step.done .tl-dot {
+    background: var(--green);
+    border-color: var(--green);
+    box-shadow: 0 0 8px rgba(74,158,92,0.3);
+  }
+  .timeline-step.fail .tl-dot {
+    background: var(--red);
+    border-color: var(--red);
+  }
+  .tl-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .tl-header .tl-num {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    color: var(--ink3); letter-spacing: 0.08em;
+    min-width: 20px;
+  }
+  .timeline-step.active .tl-num { color: var(--accent); }
+  .timeline-step.done .tl-num { color: var(--green); }
+  .tl-header h4 {
+    font-size: 13px; font-weight: 600; color: var(--ink2);
+    transition: color 0.3s;
+  }
+  .timeline-step.active .tl-header h4 { color: var(--ink); }
+  .timeline-step.done .tl-header h4 { color: var(--green); }
+  .tl-status {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 4px; letter-spacing: 0.3px;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .timeline-step.active .tl-status,
+  .timeline-step.done .tl-status,
+  .timeline-step.fail .tl-status { opacity: 1; }
+  .tl-status.pending { background: var(--surface2); color: var(--ink3); border: 1px solid var(--border); }
+  .tl-status.running { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(200,78,20,0.2); }
+  .tl-status.ok { background: var(--green-bg); color: var(--green); border: 1px solid rgba(74,158,92,0.2); }
+  .tl-status.err { background: var(--red-bg); color: var(--red); border: 1px solid rgba(200,78,78,0.2); }
+  .tl-body {
+    font-size: 12.5px; color: var(--ink2); line-height: 1.6;
+    transition: opacity 0.3s;
+  }
+  .tl-http {
+    margin-top: 10px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 10.5px; line-height: 1.5;
+    color: var(--ink2);
+    overflow-x: auto;
+    white-space: pre;
+    opacity: 0.5;
+    transition: opacity 0.4s;
+  }
+  .timeline-step.active .tl-http,
+  .timeline-step.done .tl-http { opacity: 1; }
+  .tl-http .method { color: var(--blue); font-weight: 600; }
+  .tl-http .status-402 { color: var(--red); font-weight: 600; }
+  .tl-http .status-200 { color: var(--green); font-weight: 600; }
+  .tl-http .hdr { color: var(--ink3); }
+  .tl-http .val { color: var(--accent); }
+
+  /* ── INTERACTIVE PANEL ── */
+  .interactive-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    margin-top: 36px;
+  }
+  .interactive-panel .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .interactive-panel .panel-header h3 {
+    font-size: 15px; font-weight: 600;
+  }
+  .interactive-panel .badge {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    padding: 3px 10px; border-radius: 4px; letter-spacing: 0.5px;
+  }
+  .badge-idle { background: var(--surface2); color: var(--ink3); border: 1px solid var(--border); }
+  .badge-running { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(200,78,20,0.2); }
+  .badge-done { background: var(--green-bg); color: var(--green); border: 1px solid rgba(74,158,92,0.2); }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .progress-bar .fill.complete { background: var(--green); }
+
+  /* ── RESULT CARD ── */
+  .result-card {
+    margin-top: 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: none;
+  }
+  .result-card.visible { display: block; animation: fadeIn 0.4s ease-out; }
+  .result-card.success { border-color: rgba(74,158,92,0.3); }
+  .result-card h4 {
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .result-card.success h4 { color: var(--green); }
+  .result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 680px) {
+    .result-grid { grid-template-columns: 1fr; }
+  }
+  .result-field { display: flex; flex-direction: column; gap: 3px; }
+  .result-field .rf-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--ink3);
+  }
+  .result-field .rf-value {
+    font-family: var(--mono); font-size: 12px; color: var(--ink);
+    word-break: break-all;
+  }
+  .result-field .rf-value a { color: var(--accent); text-decoration: none; }
+  .result-field .rf-value a:hover { text-decoration: underline; }
+  .result-field .rf-value .pill {
+    display: inline-block; font-size: 10px; padding: 1px 6px;
+    border-radius: 3px; background: var(--green-bg); color: var(--green);
+    border: 1px solid rgba(74,158,92,0.15);
+  }
+
+  /* ── EVIDENCE BLOCK ── */
+  .evidence-block {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 10.5px; line-height: 1.5;
+    color: var(--ink3);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .evidence-block .ek { color: var(--ink2); }
+  .evidence-block .ev { color: var(--accent); }
+
+  /* ── ARCHITECTURE SVG ── */
+  .arch-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+  }
+  .arch-wrap svg { display: block; max-width: 100%; margin: 0 auto; }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 24px;
+    text-align: center;
+    font-size: 12px; color: var(--ink3);
+    position: relative; z-index: 1;
+  }
+  footer a { color: var(--ink2); }
+  footer a:hover { color: var(--accent); }
+  footer .links {
+    display: flex; gap: 20px; justify-content: center;
+    margin-top: 8px; flex-wrap: wrap;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 680px) {
+    .hero { padding: 64px 0 44px; }
+    .hero h1 { font-size: 1.7rem; }
+    section { padding: 48px 0; }
+    nav .links { gap: 12px; }
+    nav .links a:not(.cta) { display: none; }
+    .timeline { padding-left: 32px; }
+    .tl-http { font-size: 9.5px; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Spinner ── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid var(--border2); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.6s linear infinite;
+    vertical-align: middle; margin-right: 6px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="inner">
+    <a href="/" class="brand">Recourse</a>
+    <div class="links">
+      <a href="demo.html">Escrow Demo</a>
+      <a href="x402-demo.html" class="cta">x402 Flow →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero" style="border-top:none">
+  <div class="container">
+    <div class="eyebrow">
+      <span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(74,158,92,0.5);animation:pulse 2s ease-in-out infinite"></span>
+      KeeperHub Agents Onchain · x402 Integration
+    </div>
+    <h1>x402 + <span class="accent">Chargeback Protection</span></h1>
+    <p class="subtitle">The x402 spec processes payments before delivery is verified — once funds leave the buyer, there's no dispute mechanism. Recourse intercepts the 402 flow and routes payments through on-chain escrow instead.</p>
+    <div class="cta-row">
+      <a href="#interactive" class="btn btn-primary">Run the Flow ↓</a>
+      <a href="https://github.com/tommycet/recourse-chargebacks/blob/main/docs/x402-integration-design.md" target="_blank" rel="noopener" class="btn btn-ghost">Design Doc ↗</a>
+      <a href="demo.html" class="btn btn-ghost">Escrow Demo →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── THE PROBLEM ── -->
+<section id="problem">
+  <div class="container">
+    <div class="section-label">The Problem</div>
+    <h2>x402 has no chargebacks — and that's by design</h2>
+    <p class="desc">The x402 specification treats irreversibility as a feature. But no serious buyer routes value through rails with zero recourse. Card networks learned this in 1974.</p>
+
+    <div class="problem-callout reveal">
+      <div class="callout-label">⚠ x402 Protocol Spec, §2</div>
+      <blockquote>"Payment is final — once settled, there is no dispute mechanism, no delivery verification, no chargeback. The payment is final."</blockquote>
+      <div class="callout-source">— x402 Protocol Specification v2, Core Payment Flow</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── STANDARD vs RECOURSE ── -->
+<section id="comparison">
+  <div class="container">
+    <div class="section-label">Standard vs Recourse</div>
+    <h2>Two paths after the 402 response</h2>
+    <p class="desc">The same HTTP 402 triggers fundamentally different behavior depending on whether Recourse is in the loop.</p>
+
+    <div class="compare-grid">
+      <!-- Standard x402 -->
+      <div class="compare-card danger reveal">
+        <div class="tag">✗ Standard x402 — No Protection</div>
+        <h3>Direct payment → no recourse</h3>
+        <div class="code-block"><span class="cmt">// Standard x402: buyer pays directly</span>
+<span class="kw">POST</span> /resource HTTP/1.1
+<span class="hdr">Content-Type:</span> application/json
+<span class="hdr">X-Payment:</span> <span class="val">{"x402-version": 1,
+  "payment": {<span class="hl">"signature": "0x..."</span>}}</span>
+
+→ <span class="status-200">200 OK</span> + resource payload
+
+<span class="cmt">// ⚠ Payment is FINAL.</span>
+<span class="cmt">// ❌ No escrow</span>
+<span class="cmt">// ❌ No delivery verification</span>
+<span class="cmt">// ❌ No dispute mechanism</span>
+<span class="cmt">// ❌ If seller delivers nothing → funds gone</span></div>
+      </div>
+
+      <!-- Recourse-enhanced -->
+      <div class="compare-card success reveal reveal-delay-1">
+        <div class="tag">✓ Recourse x402 — Escrow Protected</div>
+        <h3>Escrowed payment → full protection</h3>
+        <div class="code-block"><span class="cmt">// Recourse: buyer agent intercepts 402</span>
+<span class="kw">POST</span> /resource HTTP/1.1
+<span class="hdr">Content-Type:</span> application/json
+<span class="hdr">X-Payment:</span> <span class="val">{"escrowId": 42,
+  "amount": "1000000",
+  "taskId": "0xabcd..."}</span>
+
+→ <span class="status-200">200 OK</span> + resource payload
+
+<span class="cmt">// ✅ Funds locked in RecourseEscrow.sol</span>
+<span class="cmt">// ✅ Evidence bundle committed on-chain</span>
+<span class="cmt">// ✅ confirmDelivery → release to seller</span>
+<span class="cmt">// ✅ raiseDispute → AI arbiter resolves</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ARCHITECTURE ── -->
+<section id="arch">
+  <div class="container">
+    <div class="section-label">Architecture</div>
+    <h2>Recourse as x402 Proxy</h2>
+    <p class="desc">The Recourse client sits between the buyer agent and the seller. It intercepts 402 responses, creates an escrow, and submits the escrow proof instead of a direct payment.</p>
+
+    <div class="arch-wrap reveal">
+      <svg width="880" height="180" viewBox="0 0 880 180" xmlns="http://www.w3.org/2000/svg" style="background:#0a0a0a;border-radius:8px">
+        <defs>
+          <marker id="arr402" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#c84e14"/>
+          </marker>
+          <marker id="arr402g" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#4a9e5c"/>
+          </marker>
+        </defs>
+
+        <!-- Buyer Agent -->
+        <rect x="16" y="40" width="110" height="56" rx="8" fill="#161616" stroke="#333" stroke-width="1"/>
+        <text x="71" y="64" font-family="JetBrains Mono,monospace" font-size="10" fill="#f0ede6" text-anchor="middle" font-weight="600">Buyer Agent</text>
+        <text x="71" y="80" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#6b7280" text-anchor="middle">any framework</text>
+
+        <!-- Arrow → Recourse -->
+        <line x1="128" y1="68" x2="172" y2="68" stroke="#c84e14" stroke-width="1.5" marker-end="url(#arr402)"/>
+        <text x="150" y="60" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#6b7280" text-anchor="middle">intercepts</text>
+
+        <!-- Recourse Proxy -->
+        <rect x="174" y="30" width="150" height="76" rx="8" fill="rgba(200,78,20,0.08)" stroke="#c84e14" stroke-width="1.5"/>
+        <text x="249" y="54" font-family="JetBrains Mono,monospace" font-size="10" fill="#c84e14" text-anchor="middle" font-weight="700">Recourse Client</text>
+        <text x="249" y="70" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#6b7280" text-anchor="middle">intercept 402</text>
+        <text x="249" y="84" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#6b7280" text-anchor="middle">create escrow</text>
+        <text x="249" y="98" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#6b7280" text-anchor="middle">submit escrow proof</text>
+
+        <!-- Arrow → Seller -->
+        <line x1="326" y1="68" x2="370" y2="68" stroke="#c84e14" stroke-width="1.5" marker-end="url(#arr402)"/>
+        <text x="348" y="60" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#6b7280" text-anchor="middle">escrow proof</text>
+
+        <!-- Seller -->
+        <rect x="372" y="40" width="130" height="56" rx="8" fill="#161616" stroke="#333" stroke-width="1"/>
+        <text x="437" y="64" font-family="JetBrains Mono,monospace" font-size="10" fill="#f0ede6" text-anchor="middle" font-weight="600">Seller (x402)</text>
+        <text x="437" y="80" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#6b7280" text-anchor="middle">resource + 200 OK</text>
+
+        <!-- Arrow → Escrow -->
+        <line x1="249" y1="108" x2="249" y2="130" stroke="#c84e14" stroke-width="1.5" marker-end="url(#arr402)"/>
+
+        <!-- RecourseEscrow -->
+        <rect x="174" y="132" width="150" height="36" rx="6" fill="#161616" stroke="#c84e14" stroke-width="1"/>
+        <text x="249" y="154" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#c84e14" text-anchor="middle" font-weight="600">RecourseEscrow.sol</text>
+
+        <!-- KeeperHub arrow -->
+        <line x1="326" y1="150" x2="400" y2="150" stroke="#4a9e5c" stroke-width="1.5" marker-end="url(#arr402g)"/>
+
+        <!-- KeeperHub -->
+        <rect x="402" y="132" width="130" height="36" rx="6" fill="rgba(74,158,92,0.08)" stroke="#4a9e5c" stroke-width="1"/>
+        <text x="467" y="154" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#4a9e5c" text-anchor="middle" font-weight="700">KeeperHub</text>
+
+        <!-- Sepolia -->
+        <rect x="560" y="132" width="110" height="36" rx="6" fill="#161616" stroke="#4a9e5c" stroke-width="1"/>
+        <text x="615" y="154" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#4a9e5c" text-anchor="middle" font-weight="600">Sepolia TX</text>
+        <line x1="534" y1="150" x2="558" y2="150" stroke="#4a9e5c" stroke-width="1.5" marker-end="url(#arr402g)"/>
+
+        <!-- Annotations -->
+        <text x="71" y="120" font-family="JetBrains Mono,monospace" font-size="8" fill="#5a5548" text-anchor="middle">
+          GET /resource → 402
+        </text>
+        <text x="437" y="120" font-family="JetBrains Mono,monospace" font-size="8" fill="#5a5548" text-anchor="middle">
+          POST with escrow proof
+        </text>
+
+        <!-- Top annotation -->
+        <text x="640" y="60" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#5a5548" text-anchor="start">
+          confirmDelivery() → release USDC
+        </text>
+        <text x="640" y="76" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#5a5548" text-anchor="start">
+          raiseDispute() → freeze + arbiter
+        </text>
+        <text x="640" y="92" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#5a5548" text-anchor="start">
+          resolveDispute() → refund or payout
+        </text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ── STEP-BY-STEP FLOW ── -->
+<section id="flow">
+  <div class="container">
+    <div class="section-label">The Flow</div>
+    <h2>HTTP 402 → Escrow → Delivery → Settlement</h2>
+    <p class="desc">Each step is backed by on-chain state. The buyer agent never loses custody of funds until delivery is confirmed.</p>
+
+    <div class="reveal">
+      <div class="timeline" id="flowTimeline">
+        <!-- Step 1 -->
+        <div class="timeline-step" id="step-1">
+          <div class="tl-dot"></div>
+          <div class="tl-header">
+            <span class="tl-num">01</span>
+            <h4>Buyer requests resource</h4>
+            <span class="tl-status pending" id="status-1">WAITING</span>
+          </div>
+          <div class="tl-body">Agent sends <code>GET /resource</code> to an x402-enabled seller endpoint. No payment involved yet.</div>
+          <div class="tl-http"><span class="method">GET</span> /api/summarize-article HTTP/1.1
+<span class="hdr">Host:</span> seller.example.com
+<span class="hdr">Accept:</span> application/json</div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="timeline-step" id="step-2">
+          <div class="tl-dot"></div>
+          <div class="tl-header">
+            <span class="tl-num">02</span>
+            <h4>Seller returns 402 Payment Required</h4>
+            <span class="tl-status pending" id="status-2">WAITING</span>
+          </div>
+          <div class="tl-body">Seller responds with HTTP 402, specifying payment requirements: amount, accepted tokens, and payment facilitator.</div>
+          <div class="tl-http"><span class="status-402">402</span> Payment Required
+<span class="hdr">Content-Type:</span> application/json
+<span class="hdr">X-Payment-Required:</span> <span class="val">{
+  "x402-version": 1,
+  "accepts": ["USDC@base"],
+  "maxAmountRequired": "1000000",
+  "payTo": "0x8a3f...7d21",
+  "description": "Article summarization"
+}</span></div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="timeline-step" id="step-3">
+          <div class="tl-dot"></div>
+          <div class="tl-header">
+            <span class="tl-num">03</span>
+            <h4>Recourse intercepts: creates escrow</h4>
+            <span class="tl-status pending" id="status-3">WAITING</span>
+          </div>
+          <div class="tl-body">Instead of paying directly, the Recourse client creates a <code>RecourseEscrow</code> on Sepolia. USDC is approved and locked in the contract — not sent to the seller.</div>
+          <div class="tl-http"><span class="hl">RecourseClient.payWithRecourse()</span>
+
+<span class="hdr">→</span> USDC.approve(<span class="val">escrowAddr</span>, <span class="num">1000000</span>)
+<span class="hdr">→</span> Escrow.createEscrow(
+    <span class="val">buyer</span>, <span class="val">seller</span>,
+    <span class="num">1000000</span>, <span class="val">taskId</span>,
+    <span class="val">evidenceBundleHash</span>
+  )
+<span class="hdr">→</span> <span class="str">EscrowCreated(id=42)</span> <span class="cmt">// on-chain event</span></div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="timeline-step" id="step-4">
+          <div class="tl-dot"></div>
+          <div class="tl-header">
+            <span class="tl-num">04</span>
+            <h4>Submit escrow proof to seller</h4>
+            <span class="tl-status pending" id="status-4">WAITING</span>
+          </div>
+          <div class="tl-body">The buyer re-submits the request with an escrow proof (ID + amount + taskId) instead of a direct payment signature. Seller sees the escrow is funded and delivers the resource.</div>
+          <div class="tl-http"><span class="method">POST</span> /api/summarize-article HTTP/1.1
+<span class="hdr">Content-Type:</span> application/json
+<span class="hdr">X-Payment:</span> <span class="val">{
+  "escrowId": 42,
+  "amount": "1000000",
+  "taskId": "0xabcd...ef01",
+  "proof": "0x7f3a...c8b2"
+}</span>
+<span class="hdr">Body:</span> {"task": "summarize-article-2026"}
+
+→ <span class="status-200">200 OK</span> + summarized content</div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="timeline-step" id="step-5">
+          <div class="tl-dot"></div>
+          <div class="tl-header">
+            <span class="tl-num">05</span>
+            <h4>Delivery confirmed — or dispute raised</h4>
+            <span class="tl-status pending" id="status-5">WAITING</span>
+          </div>
+          <div class="tl-body">If delivery succeeds: <code>confirmDelivery(42)</code> releases USDC to seller. If it fails or times out: <code>raiseDispute(42)</code> freezes the escrow and triggers the 4-agent arbiter pipeline.</div>
+          <div class="tl-http"><span class="cmt">// Happy path — delivery confirmed</span>
+Escrow.<span class="str">confirmDelivery</span>(42, evidenceHash)
+<span class="cmt">// → USDC released to seller</span>
+
+<span class="cmt">// Failure path — dispute raised</span>
+Escrow.<span class="status-402">raiseDispute</span>(42, disputeEvidenceHash)
+<span class="cmt">// → Escrow frozen</span>
+<span class="cmt">// → 4-agent pipeline: Verifier → Arbiter → Policy → KeeperHub</span></div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="timeline-step" id="step-6">
+          <div class="tl-dot"></div>
+          <div class="tl-header">
+            <span class="tl-num">06</span>
+            <h4>Settlement on Sepolia</h4>
+            <span class="tl-status pending" id="status-6">WAITING</span>
+          </div>
+          <div class="tl-body">KeeperHub executes the final settlement tx on-chain. The entire flow — from 402 to resolution — is logged in the KeeperHub audit trail with gas estimation and retry logic.</div>
+          <div class="tl-http"><span class="cmt">// KeeperHub executes on Sepolia</span>
+Escrow.<span class="str">resolveDispute</span>(42, <span class="num">true</span>, buyerAddr)
+<span class="cmt">// → USDC refunded to buyer</span>
+<span class="cmt">// → TX: 0x6ad71f82...056afa0</span>
+<span class="cmt">// → Block: #11,374,381</span>
+<span class="cmt">// → Audit: 7z0t2yr9ecczhx0tfgad6</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── INTERACTIVE DEMO ── -->
+<section id="interactive">
+  <div class="container">
+    <div class="section-label">Interactive Demo</div>
+    <h2>Simulate the full x402 + Recourse flow</h2>
+    <p class="desc">Click the button below to walk through a simulated x402 transaction with escrow protection. All data is realistic — matching our deployed contract and real TX.</p>
+
+    <div class="interactive-panel reveal">
+      <div class="panel-header">
+        <h3>x402 Payment Flow Simulation</h3>
+        <span class="badge badge-idle" id="simBadge">READY</span>
+      </div>
+
+      <div class="progress-bar">
+        <div class="fill" id="progressFill"></div>
+      </div>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center">
+        <button class="btn btn-primary" id="runBtn" onclick="runSimulation()">▶ Run the Flow</button>
+        <button class="btn btn-ghost btn-sm" id="resetBtn" onclick="resetSimulation()" style="display:none">↺ Reset</button>
+        <span id="simSpeed" style="font-family:var(--mono);font-size:11px;color:var(--ink3)">
+          <label style="cursor:pointer"><input type="checkbox" id="fastMode"> Fast mode</label>
+        </span>
+      </div>
+
+      <!-- Result card — shown after simulation -->
+      <div class="result-card success" id="resultCard">
+        <h4>✓ Escrow #42 — Delivery Confirmed</h4>
+        <div class="result-grid">
+          <div class="result-field">
+            <span class="rf-label">Escrow ID</span>
+            <span class="rf-value">#42 <span class="pill">ACTIVE → CONFIRMED</span></span>
+          </div>
+          <div class="result-field">
+            <span class="rf-label">Amount</span>
+            <span class="rf-value">1.00 USDC</span>
+          </div>
+          <div class="result-field">
+            <span class="rf-label">Evidence Bundle Hash</span>
+            <span class="rf-value">0x7f3a8c2e...d4b1e9c8</span>
+          </div>
+          <div class="result-field">
+            <span class="rf-label">Task ID</span>
+            <span class="rf-value">0xabcd1234...ef015678</span>
+          </div>
+          <div class="result-field">
+            <span class="rf-label">Buyer</span>
+            <span class="rf-value"><a href="https://sepolia.etherscan.io/address/0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2" target="_blank">0x8c0c5c07...ea535a2 ↗</a></span>
+          </div>
+          <div class="result-field">
+            <span class="rf-label">Seller</span>
+            <span class="rf-value"><a href="https://sepolia.etherscan.io/address/0x7532A98C8eA413157787C8D2dA9659cD86D3acCe" target="_blank">0x7532A98C...D3acCe ↗</a></span>
+          </div>
+          <div class="result-field">
+            <span class="rf-label">Contract</span>
+            <span class="rf-value"><a href="https://sepolia.etherscan.io/address/0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2" target="_blank">0x8c0c5c07...ea535a2 ↗</a></span>
+          </div>
+          <div class="result-field">
+            <span class="rf-label">Chain</span>
+            <span class="rf-value">Sepolia (11155111)</span>
+          </div>
+        </div>
+
+        <div class="evidence-block">
+<span class="ek">Evidence Bundle (keccak256):</span>
+<span class="ek">  requestHash:</span>  <span class="ev">0x4e07408562bedb8b60ce0521f52a560cdc03d977</span>
+<span class="ek">  responseHash:</span> <span class="ev">0x9c52cd03b29e243a381951046453115b32870849</span>
+<span class="ek">  deliveryStatus:</span> <span class="ev">"delivered"</span>
+<span class="ek">  timestamp:</span>     <span class="ev">1753920000</span>
+<span class="ek">  signerPubKey:</span>  <span class="ev">0x04a3f2...7d21</span>
+<span class="ek">  bundleHash:</span>    <span class="ev">0x7f3a8c2e4b1d90f6e5c8a2d4b1e9c8f7a6d5e4c3</span>
+<span class="ek">  onChainMatch:</span>  <span class="ev">✓ verified</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── EVIDENCE BUNDLE SPEC ── -->
+<section id="evidence">
+  <div class="container">
+    <div class="section-label">Evidence Bundle</div>
+    <h2>Cryptographic proof of the full transaction</h2>
+    <p class="desc">Every x402 payment through Recourse generates a signed evidence bundle — request, response, delivery status — all hashed into a single bytes32 commitment stored on-chain.</p>
+
+    <div class="reveal" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);letter-spacing:0.1em;margin-bottom:10px">STEP 1</div>
+        <h3 style="font-family:var(--mono);font-size:13px;font-weight:600;margin-bottom:8px">Build</h3>
+        <p style="font-size:12px;color:var(--ink2);line-height:1.6">Hash the request URL, response body, delivery status, and timestamps into a structured evidence bundle using keccak256.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);letter-spacing:0.1em;margin-bottom:10px">STEP 2</div>
+        <h3 style="font-family:var(--mono);font-size:13px;font-weight:600;margin-bottom:8px">Commit</h3>
+        <p style="font-size:12px;color:var(--ink2);line-height:1.6">The bundle hash is committed on-chain when the escrow is created. Both buyer and seller can verify the hash matches the original payloads.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px">
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);letter-spacing:0.1em;margin-bottom:10px">STEP 3</div>
+        <h3 style="font-family:var(--mono);font-size:13px;font-weight:600;margin-bottom:8px">Verify</h3>
+        <p style="font-size:12px;color:var(--ink2);line-height:1.6">When a dispute is raised, the evidence verifier checks the on-chain hash against the reconstructed bundle. Tamper-proof: no one can alter evidence after commitment.</p>
+      </div>
+    </div>
+
+    <div class="reveal" style="margin-top:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;font-family:var(--mono);font-size:11px;line-height:1.5;color:var(--ink2);overflow-x:auto;white-space:pre">
+<span style="color:var(--ink3)">// EvidenceBundleV2 — stored as keccak256 on-chain</span>
+<span style="color:var(--accent)">interface</span> EvidenceBundleV2 {
+  version:          <span style="color:var(--blue)">uint8</span>     <span style="color:var(--ink3)">// 1</span>
+  taskId:           <span style="color:var(--blue)">bytes32</span>   <span style="color:var(--ink3)">// keccak256(task description)</span>
+  buyerAddr:        <span style="color:var(--blue)">address</span>   <span style="color:var(--ink3)">// 0x8c0c5c07...ea535a2</span>
+  sellerAddr:       <span style="color:var(--blue)">address</span>   <span style="color:var(--ink3)">// 0x7532A98C...D3acCe</span>
+  amount:           <span style="color:var(--blue)">uint256</span>   <span style="color:var(--ink3)">// 1000000 (1 USDC)</span>
+  requestHash:      <span style="color:var(--blue)">bytes32</span>   <span style="color:var(--ink3)">// keccak256(url ‖ taskDesc)</span>
+  responseHash:     <span style="color:var(--blue)">bytes32</span>   <span style="color:var(--ink3)">// keccak256(responseBody)</span>
+  deliveryStatus:   <span style="color:var(--blue)">uint8</span>     <span style="color:var(--ink3)">// 0=failed, 1=delivered</span>
+  timestamp:        <span style="color:var(--blue)">uint256</span>   <span style="color:var(--ink3)">// epoch seconds</span>
+  signerPubKey:     <span style="color:var(--blue)">bytes32</span>   <span style="color:var(--ink3)">// compressed secp256k1 X coord</span>
+}
+
+<span style="color:var(--ink3)">// bundleHash = keccak256(abi.encode(bundle))</span>
+<span style="color:var(--ink3)">// Stored on-chain in createEscrow()</span>
+<span style="color:var(--ink3)">// Verified on-chain in verifyBundle()</span></div>
+  </div>
+</section>
+
+<!-- ── KEY ADVANTAGE ── -->
+<section id="advantage">
+  <div class="container">
+    <div class="section-label">Why It Matters</div>
+    <h2>First chargeback protection for x402 payments</h2>
+    <p class="desc">Recourse is the first project to add dispute resolution to the x402 protocol. Combined with KeeperHub's execution layer, the entire flow is agent-native, reliable, and autonomous.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px" class="reveal">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px">
+        <div style="font-size:22px;margin-bottom:12px">🤖</div>
+        <h3 style="font-family:var(--mono);font-size:13px;font-weight:600;margin-bottom:8px">Agent-Native</h3>
+        <p style="font-size:12px;color:var(--ink2);line-height:1.6">MCP tools for createEscrow, confirmDelivery, resolveDispute. Any agent framework can integrate without changes.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px">
+        <div style="font-size:22px;margin-bottom:12px">🔗</div>
+        <h3 style="font-family:var(--mono);font-size:13px;font-weight:600;margin-bottom:8px">Reliable</h3>
+        <p style="font-size:12px;color:var(--ink2);line-height:1.6">Retry backoff, simulate-then-execute, full audit trail. KeeperHub handles gas estimation, MEV protection, and private routing.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px">
+        <div style="font-size:22px;margin-bottom:12px">⚡</div>
+        <h3 style="font-family:var(--mono);font-size:13px;font-weight:600;margin-bottom:8px">Autonomous</h3>
+        <p style="font-size:12px;color:var(--ink2);line-height:1.6">No human in the loop. Evidence verifier + AI arbiter + policy agent + KeeperHub — four independent agents, one on-chain verdict.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <p>Built for <a href="https://dorahacks.io" target="_blank" rel="noopener">DoraHacks</a> Agents Onchain Hackathon · KeeperHub-powered</p>
+  <div class="links">
+    <a href="demo.html">Live Demo</a>
+    <a href="x402-demo.html">x402 Flow</a>
+    <a href="https://github.com/tommycet/recourse-chargebacks" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/tommycet/recourse-chargebacks/blob/main/docs/x402-integration-design.md" target="_blank" rel="noopener">x402 Design Doc</a>
+    <a href="https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0" target="_blank" rel="noopener">Live TX</a>
+  </div>
+</footer>
+
+<!-- ── Scroll Reveal ── -->
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+<!-- ── Simulation Logic ── -->
+<script>
+  const SIM_STEPS = [
+    { id: 1, label: 'GET /resource', delay: 1200 },
+    { id: 2, label: '402 Payment Required', delay: 1400 },
+    { id: 3, label: 'Escrow created on-chain', delay: 2000 },
+    { id: 4, label: 'Escrow proof submitted', delay: 1400 },
+    { id: 5, label: 'Delivery confirmed', delay: 1800 },
+    { id: 6, label: 'Settlement complete', delay: 1200 },
+  ];
+
+  let simRunning = false;
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function getStepDelay(step) {
+    const fast = document.getElementById('fastMode').checked;
+    return fast ? Math.floor(step.delay / 4) : step.delay;
+  }
+
+  function updateProgress(currentStep) {
+    const pct = Math.round((currentStep / SIM_STEPS.length) * 100);
+    const fill = document.getElementById('progressFill');
+    fill.style.width = pct + '%';
+    if (currentStep === SIM_STEPS.length) {
+      fill.classList.add('complete');
+    } else {
+      fill.classList.remove('complete');
+    }
+  }
+
+  function setStepStatus(stepNum, status) {
+    const stepEl = document.getElementById('step-' + stepNum);
+    const statusEl = document.getElementById('status-' + stepNum);
+    if (!stepEl || !statusEl) return;
+
+    stepEl.className = 'timeline-step';
+    statusEl.className = 'tl-status';
+
+    if (status === 'active') {
+      stepEl.classList.add('active');
+      statusEl.classList.add('running');
+      statusEl.innerHTML = '<span class="spinner"></span>RUNNING';
+    } else if (status === 'done') {
+      stepEl.classList.add('done');
+      statusEl.classList.add('ok');
+      statusEl.textContent = '✓ DONE';
+    } else if (status === 'fail') {
+      stepEl.classList.add('fail');
+      statusEl.classList.add('err');
+      statusEl.textContent = '✗ FAILED';
+    } else {
+      statusEl.classList.add('pending');
+      statusEl.textContent = 'WAITING';
+    }
+  }
+
+  async function runSimulation() {
+    if (simRunning) return;
+    simRunning = true;
+
+    const runBtn = document.getElementById('runBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const simBadge = document.getElementById('simBadge');
+    const resultCard = document.getElementById('resultCard');
+
+    runBtn.disabled = true;
+    runBtn.innerHTML = '<span class="spinner"></span>Running…';
+    resetBtn.style.display = 'none';
+    resultCard.classList.remove('visible');
+    resultCard.style.display = 'none';
+
+    simBadge.textContent = 'RUNNING';
+    simBadge.className = 'badge badge-running';
+
+    // Reset all steps
+    for (let i = 1; i <= SIM_STEPS.length; i++) {
+      setStepStatus(i, 'pending');
+    }
+    updateProgress(0);
+
+    for (const step of SIM_STEPS) {
+      // Activate current step
+      setStepStatus(step.id, 'active');
+      await delay(getStepDelay(step));
+
+      // Mark complete
+      setStepStatus(step.id, 'done');
+      updateProgress(step.id);
+    }
+
+    // Show result
+    simBadge.textContent = 'COMPLETE';
+    simBadge.className = 'badge badge-done';
+    runBtn.style.display = 'none';
+    resetBtn.style.display = '';
+
+    resultCard.style.display = '';
+    // Trigger reflow for animation
+    void resultCard.offsetWidth;
+    resultCard.classList.add('visible');
+
+    simRunning = false;
+  }
+
+  function resetSimulation() {
+    const runBtn = document.getElementById('runBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const simBadge = document.getElementById('simBadge');
+    const resultCard = document.getElementById('resultCard');
+    const fill = document.getElementById('progressFill');
+
+    for (let i = 1; i <= SIM_STEPS.length; i++) {
+      setStepStatus(i, 'pending');
+    }
+    updateProgress(0);
+    fill.style.width = '0%';
+    fill.classList.remove('complete');
+
+    resultCard.classList.remove('visible');
+    resultCard.style.display = 'none';
+
+    runBtn.style.display = '';
+    runBtn.disabled = false;
+    runBtn.innerHTML = '▶ Run the Flow';
+    resetBtn.style.display = 'none';
+
+    simBadge.textContent = 'READY';
+    simBadge.className = 'badge badge-idle';
+  }
+</script>
+</body>
+</html>
