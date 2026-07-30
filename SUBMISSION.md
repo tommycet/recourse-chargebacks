@@ -29,14 +29,15 @@ Our AI arbiter evaluated a dispute, issued a verdict (buyer wins), and executed 
 
 ## KeeperHub Surfaces Used
 
-Recourse integrates **two** KeeperHub surfaces — the arbiter tries MCP first, then falls back to the Direct Execution API. This dual-surface architecture means the agent can execute even if one path is unavailable.
+Recourse integrates **three** KeeperHub surfaces — the arbiter tries MCP first, falls back to Direct Execution API, with a CLI wrapper as the third surface. This multi-surface architecture means the agent can execute even if one path is unavailable.
 
 | # | Surface | How We Use It | Code |
 |---|---------|---------------|------|
-| 1 | **MCP Server** (`https://app.keeperhub.com/mcp`) | Agent-native tool discovery — connects via `@modelcontextprotocol/sdk`, calls `execute_contract_call` tool to run `resolveDispute()` onchain | `agent/src/keeperhub-mcp.ts` |
-| 2 | **Direct Execution API** (`POST /api/execute/contract-call`) | HTTP fallback — single REST call with contract address, ABI, and function args. Simulate-then-execute pattern (preflight with `simulate: true` before broadcasting) | `agent/src/keeperhub-arbiter.ts` |
+| 1 | **MCP Server** (`https://app.keeperhub.com/mcp`) | Agent-native tool discovery — connects via `@modelcontextprotocol/sdk`, calls `execute_contract_call` tool to run `resolveDispute()` onchain | [`agent/src/keeperhub-mcp.ts`](agent/src/keeperhub-mcp.ts) |
+| 2 | **Direct Execution API** (`POST /api/execute/contract-call`) | HTTP fallback — single REST call with contract address, ABI, and function args. Simulate-then-execute pattern (preflight with `simulate: true` before broadcasting) | [`agent/src/keeperhub-arbiter.ts`](agent/src/keeperhub-arbiter.ts) |
+| 3 | **CLI Wrapper** (`kh execute contract-call`) | Third surface wrapping the Direct API behind a CLI-compatible interface. Falls back to Direct API if `kh` CLI is not installed. Provides `isAvailable()` check, `resolveDispute()` convenience method, and structured `CLICallResult` output capturing tx hash + execution ID | [`agent/src/keeperhub-cli-client.ts`](agent/src/keeperhub-cli-client.ts) |
 
-**Routing logic** (in `keeperhub-arbiter.ts`): MCP health check → if healthy, execute via MCP → if MCP fails or unavailable, execute via Direct API → retry transient failures with exponential backoff (2 s / 4 s / 8 s).
+**Routing logic** (in `keeperhub-arbiter.ts`): MCP health check → if healthy, execute via MCP → if MCP fails or unavailable, execute via Direct API → retry transient failures with exponential backoff (2 s / 4 s / 8 s). The CLI wrapper (`keeperhub-cli-client.ts`) provides the same `resolveDispute()` interface through `cliExecute.resolveDispute()`, trying `kh execute` first with Direct API fallback.
 
 **Future:** Full x402 protocol integration with escrow header injection — see [`docs/x402-integration-design.md`](docs/x402-integration-design.md) for the design.
 
