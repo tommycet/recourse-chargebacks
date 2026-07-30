@@ -436,7 +436,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // setArbiter
+    // §1 setArbiter
     // -----------------------------------------------------------------------
     function test_setArbiter_ownerCanChange() public {
         address newArbiter = address(0xDEAD);
@@ -457,7 +457,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // Fee recipient balance check across multiple escrows
+    // §1 Fee recipient balance check across multiple escrows
     // -----------------------------------------------------------------------
     function test_feeRecipient_accumulatesAcrossEscrows() public {
         uint256 ownerBefore = usdc.balanceOf(owner);
@@ -484,7 +484,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // statusOf for non-existent escrow
+    // §1 statusOf for non-existent escrow
     // -----------------------------------------------------------------------
     function test_statusOf_nonExistentReverts() public {
         vm.expectRevert("no escrow");
@@ -492,7 +492,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // Disputed status transitions correctly to Refunded in statusOf after TIMEOUT
+    // §1 Disputed status transitions correctly to Refunded in statusOf after TIMEOUT
     // -----------------------------------------------------------------------
     function test_statusOf_refundedAfterTimeout() public {
         uint256 id = _createAndDispute();
