@@ -1,6 +1,6 @@
 // agent/src/arbiter-llm.ts — LLM-powered dispute resolution with rule-based fallback
 // Part of Recourse: Chargebacks for the Machine Economy
-// Uses OpenRouter (deepseek/deepseek-chat) for evidence analysis; falls back to rules on failure.
+// Providers (priority order): Groq (llama-3.3-70b) → OpenRouter (DeepSeek) → rule-based fallback.
 
 export interface SimpleBundle {
   version: number;
@@ -28,14 +28,48 @@ export interface Verdict {
   source: "llm" | "fallback";
 }
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat";
+// --- LLM Provider Configuration ---
+// Two providers: Groq (fast inference) and OpenRouter (DeepSeek fallback).
+// Priority: GROQ_API_KEY → OPENROUTER_API_KEY → rule-based fallback.
+// Override models via GROQ_MODEL / OPENROUTER_MODEL env vars.
 
-export async function analyzeDispute(
-  bundle: SimpleBundle,
-  escrow: EscrowContext,
-): Promise<Verdict> {
-  const prompt = [
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat";
+
+interface ProviderConfig {
+  url: string;
+  model: string;
+  apiKey: string;
+  name: string;
+}
+
+function selectProvider(): ProviderConfig | null {
+  // Priority 1: Groq
+  if (process.env.GROQ_API_KEY) {
+    return {
+      url: GROQ_URL,
+      model: GROQ_MODEL,
+      apiKey: process.env.GROQ_API_KEY,
+      name: "groq",
+    };
+  }
+  // Priority 2: OpenRouter (DeepSeek)
+  if (process.env.OPENROUTER_API_KEY) {
+    return {
+      url: OPENROUTER_URL,
+      model: OPENROUTER_MODEL,
+      apiKey: process.env.OPENROUTER_API_KEY,
+      name: "openrouter",
+    };
+  }
+  return null;
+}
+
+function buildPrompt(bundle: SimpleBundle, escrow: EscrowContext) {
+  return [
     {
       role: "system",
       content:
@@ -67,29 +101,36 @@ export async function analyzeDispute(
       }),
     },
   ];
+}
 
+export async function analyzeDispute(
+  bundle: SimpleBundle,
+  escrow: EscrowContext,
+): Promise<Verdict> {
+  const prompt = buildPrompt(bundle, escrow);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
 
   try {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      throw new Error("OPENROUTER_API_KEY not set");
+    const provider = selectProvider();
+    if (!provider) {
+      throw new Error("No LLM provider configured (set GROQ_API_KEY or OPENROUTER_API_KEY)");
     }
 
-    const res = await fetch(OPENROUTER_URL, {
+    const res = await fetch(provider.url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${provider.apiKey}`,
+        ...(provider.name === "openrouter" ? { "HTTP-Referer": "https://recourse.dev", "X-Title": "Recourse" } : {}),
       },
-      body: JSON.stringify({ model: MODEL, messages: prompt, max_tokens: 200 }),
+      body: JSON.stringify({ model: provider.model, messages: prompt, max_tokens: 200 }),
       signal: controller.signal,
     });
 
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      throw new Error(`OpenRouter returned ${res.status}: ${body.slice(0, 200)}`);
+      throw new Error(`${provider.name} returned ${res.status}: ${body.slice(0, 200)}`);
     }
 
     const data = await res.json();
