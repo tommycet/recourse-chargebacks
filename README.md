@@ -73,14 +73,15 @@ Future direction: full x402 protocol integration with escrow header injection (`
 
 ---
 
-## KeeperHub Integration — Two Surfaces
+## KeeperHub Integration — Three Surfaces
 
-Recourse uses **two** KeeperHub surfaces with automatic failover. The arbiter tries the MCP server first (agent-native), then falls back to the Direct Execution API (HTTP).
+Recourse uses **three** KeeperHub surfaces with automatic failover. The arbiter tries the MCP server first (agent-native), falls back to the Direct Execution API (HTTP), with a CLI wrapper as a third interface.
 
 | Surface | Role | Code |
 |---------|------|------|
 | **MCP Server** (`https://app.keeperhub.com/mcp`) | Agent-native tool discovery via `@modelcontextprotocol/sdk` — calls `execute_contract_call` to run `resolveDispute()` | `agent/src/keeperhub-mcp.ts` |
 | **Direct Execution API** (`POST /api/execute/contract-call`) | HTTP fallback — single REST call with contract address, ABI, function args. Simulate-then-execute preflight before broadcasting | `agent/src/keeperhub-arbiter.ts` |
+| **CLI Wrapper** (`kh execute` via child_process) | CLI interface — wraps the Direct Execution API as a CLI-compatible surface, demonstrating third integration path | `agent/src/keeperhub-cli-client.ts` |
 
 ### Reliability Features
 
