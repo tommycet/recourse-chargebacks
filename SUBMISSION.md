@@ -68,6 +68,8 @@ Recourse integrates **two** KeeperHub surfaces — the arbiter tries MCP first, 
 
 ## Competitive Landscape
 
+*Analysis based on scraping all BUIDLs on DoraHacks + KeeperHub's prior ETHGlobal Open Agents hackathon (April 2026), where judging emphasized "Depth of KeeperHub integration" and "Mergeable quality: clean code, clear documentation, working examples."*
+
 We researched all 6 publicly visible BUIDLs on the DoraHacks event page. None do chargeback/dispute resolution. The competitive threats are:
 
 | Competitor | BUIDL | Threat Level | Overlap | Their Weakness |
@@ -156,6 +158,8 @@ Each agent is independently testable and communicates through typed interfaces. 
 ---
 
 ## x402 Protocol Understanding
+
+*40/180 previous KeeperHub hackathon winners used x402 — judges see it as a strong signal of deep integration understanding.*
 
 The last KeeperHub hackathon saw **40/180 winning projects use x402**. Judges read x402 fluency as a signal of deep protocol understanding. We speak the protocol natively.
 
