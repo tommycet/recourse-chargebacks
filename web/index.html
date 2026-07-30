@@ -187,13 +187,18 @@
   }
 
   /* ── SCROLL REVEAL ── */
+  /* Content visible by default; JS adds .reveal-ready to <html> to enable the
+     animation. This ensures content is never permanently invisible if
+     IntersectionObserver fails (headless browsers, slow JS, no-JS users). */
   .reveal {
-    opacity: 0;
-    transform: translateY(24px);
     transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
                 transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .reveal.visible {
+  html.reveal-ready .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  html.reveal-ready .reveal.visible {
     opacity: 1;
     transform: translateY(0);
   }
@@ -390,7 +395,7 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
   }
-  @media (max-width: 680px) {
+  @media (max-width: 768px) {
     .does-grid { grid-template-columns: 1fr; }
   }
   .does-card {
@@ -1011,6 +1016,8 @@
 
 <!-- ── Scroll Reveal (vanilla JS, no frameworks) ── -->
 <script>
+  // Progressive reveal: content visible by default, JS enhances with animation
+  // (no reveal-ready class added — content never hidden on first paint)
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
   }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });

@@ -155,12 +155,16 @@
   }
 
   /* ── SCROLL REVEAL ── */
+  /* Content visible by default (no hiding on first paint). JS adds .visible
+     class via IntersectionObserver for a subtle slide-up enhancement. */
   .reveal {
-    opacity: 0; transform: translateY(24px);
+    opacity: 1; transform: translateY(0);
     transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
                 transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal:not(.visible) {
+    opacity: 0; transform: translateY(24px);
+  }
   .reveal-delay-1 { transition-delay: 0.1s; }
   .reveal-delay-2 { transition-delay: 0.2s; }
   .reveal-delay-3 { transition-delay: 0.3s; }
@@ -196,7 +200,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 20px;
   }
-  @media (max-width: 680px) {
+  @media (max-width: 768px) {
     .compare-grid { grid-template-columns: 1fr; }
   }
   .compare-card {
@@ -405,7 +409,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
-  @media (max-width: 680px) {
+  @media (max-width: 768px) {
     .result-grid { grid-template-columns: 1fr; }
   }
   .result-field { display: flex; flex-direction: column; gap: 3px; }
@@ -468,7 +472,7 @@
   }
 
   /* ── Mobile ── */
-  @media (max-width: 680px) {
+  @media (max-width: 768px) {
     .hero { padding: 64px 0 44px; }
     .hero h1 { font-size: 1.7rem; }
     section { padding: 48px 0; }
