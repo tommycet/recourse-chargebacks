@@ -158,6 +158,7 @@ async function demo() {
   console.log("║  Phase 4: KeeperHub Execution (Agent 4)                    ║");
   console.log("╚══════════════════════════════════════════════════════════════╝");
   console.log(`  Status:     ${result.status}`);
+  console.log(`  Surface:    ${result.keeperHubSurface ?? "N/A"}`);
   console.log(`  TX Hash:    ${result.txHash ?? "N/A (no API key)"}`);
   console.log(`  Exec ID:    ${result.keeperHubExecutionId ?? "N/A"}`);
   console.log(`  Audit URL:  ${result.keeperHubAuditUrl ?? "N/A"}`);
@@ -209,6 +210,7 @@ async function demo() {
         name: "KeeperHub Execution",
         agent: "keeperhub",
         status: result.status,
+        surface: result.keeperHubSurface,
         txHash: result.txHash,
         keeperHubExecutionId: result.keeperHubExecutionId,
         keeperHubAuditUrl: result.keeperHubAuditUrl,
