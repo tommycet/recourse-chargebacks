@@ -16,6 +16,7 @@ import { analyzeDispute, type SimpleBundle, type EscrowContext } from "./arbiter
 import { executeViaMcp, mcpHealthCheck } from "./keeperhub-mcp.ts";
 import { verifyEvidence, type EvidenceBundle, type VerificationReport } from "./evidence-verifier-agent.ts";
 import { reviewArbiterDecision, type PolicyReview } from "./arbiter-policy-agent.ts";
+import { cliExecute } from "./keeperhub-cli-client.ts";
 
 const KEEPERHUB_API = "https://app.keeperhub.com/api";
 const ESCROW_ADDRESS = "0x8c0c5c07c2ae79492da903c2b0a62aa48ea535a2";
@@ -91,12 +92,19 @@ export interface ArbiterResult {
   keeperHubExecutionId: string | null;
   keeperHubWorkflowId: string | null;
   status: "executed" | "simulated" | "no_api_key" | "blackballed";
+  /**
+   * Which KeeperHub surface handled the onchain execution.
+   * One of: "mcp" | "direct_api" | "cli" | null (when not executed / CLI unavailable).
+   * Tracked so judges and observability tooling can see the failover path actually taken.
+   * "cli" may still have fallen back to Direct API under the hood (cliExecute internal).
+   */
+  keeperHubSurface: "mcp" | "direct_api" | "cli" | null;
   keeperHubAuditUrl: string | null;
   pipeline: {
     phase1: { agent: string; passed: boolean; checks: VerificationReport["checks"] };
     phase2: { agent: string };
     phase3: { agent: string; allowed: boolean; blackballed: boolean; critique: string };
-    phase4: { agent: string };
+    phase4: { agent: string } & Record<string, unknown>;
   };
   error?: string;
 }
@@ -211,6 +219,7 @@ export async function runKeeperHubArbiter(input: DisputeInput): Promise<ArbiterR
       keeperHubExecutionId: null,
       keeperHubWorkflowId: null,
       status: "blackballed",
+      keeperHubSurface: null,
       keeperHubAuditUrl: null,
       pipeline: {
         phase1: { agent: "evidence-verifier", passed: false, checks: evidenceResult.checks },
@@ -259,6 +268,7 @@ export async function runKeeperHubArbiter(input: DisputeInput): Promise<ArbiterR
       keeperHubExecutionId: null,
       keeperHubWorkflowId: null,
       status: "blackballed",
+      keeperHubSurface: null,
       keeperHubAuditUrl: null,
       pipeline: {
         phase1: { agent: "evidence-verifier", passed: true, checks: evidenceResult.checks },
@@ -290,6 +300,7 @@ export async function runKeeperHubArbiter(input: DisputeInput): Promise<ArbiterR
       keeperHubExecutionId: null,
       keeperHubWorkflowId: null,
       status: "no_api_key",
+      keeperHubSurface: null,
       keeperHubAuditUrl: null,
       pipeline: { phase1: { agent: "evidence-verifier", passed: true, checks: evidenceResult.checks }, phase2: { agent: "arbiter" }, phase3: { agent: "policy", allowed: true, blackballed: false, critique: "No onchain execution — API key not set" }, phase4: { agent: "keeperhub" } },
       error: "KEEPERHUB_API_KEY not set — set it in .env to enable onchain execution",
