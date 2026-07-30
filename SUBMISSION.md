@@ -161,7 +161,7 @@ We researched all 6 publicly visible BUIDLs on the DoraHacks event page. None do
 | **RebalanceKeeper** | 47135 | Low | MCP-native protocol actions | DeFi niche, not payments |
 | **Agent Starter** | 47255 | Bounty-only | Onboarding kit for $1K bounty | No real transaction, cosmetic proof |
 
-**Our defensible differentiator:** We are the only project building dispute resolution for agent payments. The x402 protocol has no chargeback mechanism — we're filling that gap. Combined with our 4-agent pipeline (evidence-verifier → arbiter → policy-agent → KeeperHub) and 137 tests, we have the strongest test suite of any competitor excepting the prior hackathon's Tradewise (125 tests, #1 winner).
+**Our defensible differentiator:** We are the only project building dispute resolution for agent payments. The x402 protocol has no chargeback mechanism — we're filling that gap. Combined with our 4-agent pipeline (evidence-verifier → arbiter → policy-agent → KeeperHub) and 137 tests, we have the strongest test suite of any competitor behind the prior hackathon's Tradewise (125 tests, #1 winner).
 
 **We have more KeeperHub surfaces (MCP + Direct + x402 design) than Sentinel and more tests than Vigil.**
 
@@ -233,7 +233,7 @@ evidence-verifier → arbiter → policy-agent → KeeperHub (onchain)
 | **1. Evidence Verification** | `evidence-verifier` | Validates cryptographic evidence bundles — hash integrity, timestamps, signature chains. Rejects tampered or incomplete bundles before the arbiter sees them. Unknown-unknowns surface here. |
 | **2. Arbitration** | `arbiter` (LLM + rule-based) | Evaluates verified evidence against the service contract. Issues a binary verdict (`buyerWins`/`sellerWins`) with a confidence score. Deterministic rule-based fallback when no LLM key is available. |
 | **3. Policy Enforcement** | `policy-agent` | Checks verdict against escrow policy limits, challenge windows, and the `RecourseEscrow` state machine. Steps verdicts that would violate contract invariants. |
-| **4. Onchain Execution** | **KeeperHub** (MCP → Direct API) | The final phase: `resolveDispute()` is signed and broadcast on Sepolia through KeeperHub's EIP-7702 smart account. Dual-surface (MCP first, Direct API fallback). Full audit trail. |
+| **4. Onchain Execution** | **KeeperHub** (MCP → Direct API → CLI) | The final phase: `resolveDispute()` is signed and broadcast on Sepolia through KeeperHub's EIP-7702 smart account. Three surfaces (MCP first, Direct API fallback, CLI wrapper). Full audit trail. |
 
 Each agent is independently testable and communicates through typed interfaces. The pipeline can be replayed end-to-end from any preserved evidence bundle.
 

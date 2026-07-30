@@ -235,7 +235,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // confirmDelivery — fee deducted verified
+    // §1 confirmDelivery — fee deducted verified
     // -----------------------------------------------------------------------
     function test_confirmDelivery_feeDeductedAndSellerPaid() public {
         uint256 id = _create();
@@ -267,7 +267,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // raiseDispute
+    // §1 raiseDispute — core
     // -----------------------------------------------------------------------
     function test_raiseDispute_setsDisputedStatus() public {
         uint256 id = _create();
@@ -291,7 +291,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // resolveDispute — buyer wins, fee deducted
+    // §1 resolveDispute — buyer wins, fee deducted
     // -----------------------------------------------------------------------
     function test_resolveDispute_buyerWins_feeDeducted() public {
         uint256 id = _createAndDispute();
@@ -309,7 +309,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // resolveDispute — seller wins, fee deducted
+    // §1 resolveDispute — seller wins, fee deducted
     // -----------------------------------------------------------------------
     function test_resolveDispute_sellerWins_feeDeducted() public {
         uint256 id = _createAndDispute();
@@ -327,7 +327,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // resolveDispute — unauthorized arbiter revert
+    // §1 resolveDispute — unauthorized arbiter revert
     // -----------------------------------------------------------------------
     function test_resolveDispute_unauthorizedReverts() public {
         uint256 id = _createAndDispute();
