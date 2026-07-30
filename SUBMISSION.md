@@ -2,9 +2,25 @@
 
 **The dispute-resolution and escrow layer for autonomous x402 agent payments — executed onchain through KeeperHub.**
 
-> **GitHub:** https://github.com/tommycet/recourse-chargebacks
+> **GitHub (source code):** https://github.com/tommycet/recourse-chargebacks
+> **Demo video:** `demo-video-final-v2.mp4` — 72 s, shows agent executing `resolveDispute()` onchain through KeeperHub
+> **Live transaction (via KeeperHub):** https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0
 > **Hackathon:** KeeperHub - Agents Onchain (DoraHacks)
 > **Network:** Ethereum Sepolia
+
+---
+
+## DoraHacks Submission Requirements Checklist
+
+*Source: [DoraHacks detail page — "How to submit"](https://dorahacks.io/hackathon/agents-onchain/detail#how-to-submit). "Each submission requires: a link to your source code on GitHub, a short demo video showing your agent executing onchain through KeeperHub, a link to a transaction your agent executed via KeeperHub. Incomplete submissions cannot be judged."*
+
+| # | Required Field | Where in this document | Link |
+|---|----------------|------------------------|------|
+| 1 | **GitHub source code link** | Header above + [Project Structure](#project-structure) | https://github.com/tommycet/recourse-chargebacks |
+| 2 | **Demo video** (agent executing onchain via KeeperHub) | [Demo Video](#demo-video) | `demo-video-final-v2.mp4` — 72 s, 1.9 MB |
+| 3 | **Transaction link** (executed via KeeperHub) | [Transaction Proof](#transaction-proof) | https://eth-sepolia.blockscout.com/tx/0x6ad71f82bfe80775b9588410dc1708f9d83b3f20e5fcb259926ccbffb056afa0 |
+
+All three required submission artifacts are provided. Our agent executed a real signed transaction on Sepolia through KeeperHub's EIP-7702 smart account — not a mockup.
 
 ---
 
