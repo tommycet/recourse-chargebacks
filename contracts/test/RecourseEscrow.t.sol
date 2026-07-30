@@ -337,7 +337,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // resolveDispute — already resolved revert
+    // §1 resolveDispute — already resolved revert
     // -----------------------------------------------------------------------
     function test_resolveDispute_alreadyResolvedReverts() public {
         uint256 id = _createAndDispute();
@@ -350,7 +350,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // resolveDispute — invalid payout (mismatch) revert
+    // §1 resolveDispute — invalid payout (mismatch) revert
     // -----------------------------------------------------------------------
     function test_resolveDispute_buyerWinsMismatchReverts() public {
         uint256 id = _createAndDispute();
@@ -367,7 +367,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // forceResolve after 7-day DISPUTE_EXPIRY (vm.warp)
+    // §1 forceResolve after 7-day DISPUTE_EXPIRY (vm.warp)
     // -----------------------------------------------------------------------
     function test_forceResolve_after7Days_refundsBuyer() public {
         uint256 id = _createAndDispute();
@@ -404,7 +404,7 @@ contract RecourseEscrowTest is Test {
     }
 
     // -----------------------------------------------------------------------
-    // autoRefund after TIMEOUT (14 days)
+    // §1 autoRefund after TIMEOUT (14 days)
     // -----------------------------------------------------------------------
     function test_autoRefund_after14Days_fullRefund() public {
         uint256 id = _createAndDispute();

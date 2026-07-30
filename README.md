@@ -67,7 +67,7 @@ evidence-verifier → arbiter → policy-agent → KeeperHub (onchain)
 | **1. Evidence Verification** | `evidence-verifier` | Validates cryptographic evidence bundles — hash integrity, timestamps, and signature chains. Tampered bundles are rejected before reaching the arbiter. |
 | **2. Arbitration** | `arbiter` (LLM + rule-based) | Evaluates verified evidence against the service contract. Issues a binary verdict (`buyerWins`/`sellerWins`) with a confidence score. Falls back to deterministic rules when no LLM key is available. |
 | **3. Policy Enforcement** | `policy-agent` | Verifies the verdict against escrow constraints — policy limits, challenge windows, and contract state invariants. Halts any invalid execution. |
-| **4. Onchain Execution** | **KeeperHub** | Signs and broadcasts `resolveDispute()` on Sepolia through KeeperHub's EIP-7702 smart account. Dual-surface (MCP → Direct API fallback), retry with exponential backoff (2/4/8 s), complete audit trail. |
+| **4. Onchain Execution** | **KeeperHub** | Signs and broadcasts `resolveDispute()` on Sepolia through KeeperHub's EIP-7702 smart account. Three surfaces (MCP → Direct API → CLI), retry with exponential backoff (2/4/8 s), complete audit trail. |
 
 Future direction: full x402 protocol integration with escrow header injection (`X-Escrow-Contract`). See [`docs/x402-integration-design.md`](docs/x402-integration-design.md) for the design.
 
@@ -172,7 +172,7 @@ Phase 3: Policy Agent
   │
   ▼ APPROVED
 Phase 4: KeeperHub Onchain Execution
-     MCP server (try first) → Direct Execution API (fallback)
+     MCP server (try first) → Direct Execution API (fallback) → CLI wrapper (third)
      simulate → broadcast → audit trail
 ```
 
@@ -192,7 +192,7 @@ See also our [x402 Protocol Integration Design](docs/x402-integration-design.md)
 | Layer | Technology |
 |-------|------------|
 | **Smart Contracts** | Solidity 0.8.20 + Foundry — 137/137 tests passing |
-| **Execution Layer** | KeeperHub MCP Server + Direct Execution API (dual-surface, auto-failover) |
+| **Execution Layer** | KeeperHub MCP Server + Direct Execution API + CLI Wrapper (three-surface, auto-failover) |
 | **Evidence Bundles** | `keccak256` + ABI encoding, committed onchain |
 | **Arbiter** | TypeScript + LLM evaluation (rule-based fallback) |
 | **Wallet** | KeeperHub agentic wallet (EIP-7702 smart account, Turnkey enclave — no plaintext key) |
@@ -321,4 +321,4 @@ Recourse is not a theoretical fix. It's a deployed, working system — with a li
 
 ## License
 
-MIT © 2025 Recourse Contributors
+MIT © 2026 Recourse Contributors
