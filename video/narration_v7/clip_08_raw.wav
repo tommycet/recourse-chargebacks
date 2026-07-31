@@ -1,1 +1,0 @@
-{"error":{"message":"Rate limit reached for model `canopylabs/orpheus-v1-english` in organization `org_01kyrrzpvcew6syx2bzc7f830s` service tier `on_demand` on tokens per day (TPD): Limit 3600, Used 3555, Requested 82. Please try again in 14m48s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing","type":"tokens","code":"rate_limit_exceeded"}}

@@ -1,0 +1,27 @@
+{
+  "totalDuration": 151.13,
+  "scenes": {
+    "hero_start": 0,
+    "hero_end": 11.99,
+    "primitives_start": 11.99,
+    "primitives_end": 23.35,
+    "how_start": 23.35,
+    "how_end": 34.56,
+    "launch_start": 34.56,
+    "launch_end": 40.84,
+    "offline_start": 40.84,
+    "offline_end": 45.68,
+    "workspace_start": 45.68,
+    "workspace_end": 59.19,
+    "form_start": 59.19,
+    "form_end": 93.13,
+    "dispute_start": 93.13,
+    "dispute_end": 107.92,
+    "execsim_start": 107.92,
+    "execsim_end": 129.06,
+    "aftermath_start": 129.06,
+    "aftermath_end": 143.12,
+    "closing_start": 143.12,
+    "closing_end": 151.13
+  }
+}
