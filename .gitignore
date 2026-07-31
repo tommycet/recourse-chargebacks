@@ -11,3 +11,14 @@ contracts/lib/
 .env
 demo/node_modules/
 demo/deployed.json
+
+# Demo video files — too large for git, kept local only
+*.mp4
+*.webm
+*.wav
+*.mp3
+*.ogg
+video/raw-*/
+video/segments_*/
+video/narration-*/
+demo-video/
