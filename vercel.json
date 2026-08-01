@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd api && npm install",
+  "outputDirectory": "web",
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
+  ]
+}
